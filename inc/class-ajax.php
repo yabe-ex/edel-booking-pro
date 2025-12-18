@@ -7,12 +7,12 @@ class EdelBookingProAjax {
 
     private $availability;
     private $emails;
-    private $settings; // ★設定キャッシュ用
+    private $settings;
 
     public function __construct() {
         $this->availability = new EdelBookingProAvailability();
         $this->emails = new EdelBookingProEmails();
-        $this->settings = get_option('edel_booking_settings', array()); // 設定ロード
+        $this->settings = get_option('edel_booking_settings', array());
 
         // 管理画面用
         add_action('wp_ajax_edel_fetch_events', array($this, 'fetch_events'));
@@ -40,9 +40,6 @@ class EdelBookingProAjax {
         add_action('wp_ajax_edel_mypage_change_password', array($this, 'mypage_change_password'));
     }
 
-    /**
-     * 店舗定休日かチェックするヘルパー (ClassAvailabilityと同様)
-     */
     private function is_store_closed($date) {
         $closed_days = isset($this->settings['closed_days']) ? $this->settings['closed_days'] : array();
         if (empty($closed_days)) return false;
@@ -50,29 +47,19 @@ class EdelBookingProAjax {
         return in_array($dw, $closed_days);
     }
 
-    /**
-     * スタッフの休日かチェックするヘルパー
-     */
     private function is_staff_off($date, $staff_id) {
         global $wpdb;
         $table_exceptions = $wpdb->prefix . 'edel_booking_schedule_exceptions';
-        $exception = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table_exceptions WHERE staff_id = %d AND exception_date = %s",
-            $staff_id,
-            $date
-        ));
-        if ($exception) {
-            return (bool)$exception->is_day_off;
-        }
+        $exception = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_exceptions WHERE staff_id = %d AND exception_date = %s", $staff_id, $date));
+        if ($exception) return (bool)$exception->is_day_off;
         $dw_map = ['Sun' => 'sun', 'Mon' => 'mon', 'Tue' => 'tue', 'Wed' => 'wed', 'Thu' => 'thu', 'Fri' => 'fri', 'Sat' => 'sat'];
         $dw = $dw_map[date('D', strtotime($date))];
         $schedule = get_user_meta($staff_id, 'edel_weekly_schedule', true);
         if (!$schedule || !isset($schedule[$dw]) || !empty($schedule[$dw]['off'])) return true;
-
         return false;
     }
 
-    // ... (fetch_events, save_booking 等は変更なしのため省略せず全て記述) ...
+    // fetch_events, get_calendar_status, get_available_slots 等は変更なしのため省略せず記述
     public function fetch_events() {
         if (!current_user_can('edit_posts')) wp_send_json_error('Forbidden');
         global $wpdb;
@@ -144,105 +131,58 @@ class EdelBookingProAjax {
         wp_die();
     }
 
-    /**
-     * ★修正: カレンダー表示用の空き状況 (記号・定休日対応)
-     */
     public function get_calendar_status() {
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, 'nonce');
-
         $staff_id = intval($_GET['staff_id']);
         $service_id = intval($_GET['service_id']);
         $start_date = sanitize_text_field($_GET['start']);
         $end_date   = sanitize_text_field($_GET['end']);
-
         if (!$staff_id || !$service_id) {
             wp_send_json_success(array());
         }
-
         global $wpdb;
-        // サービス所要時間を取得
         $service = $wpdb->get_row($wpdb->prepare("SELECT duration FROM {$wpdb->prefix}edel_booking_services WHERE id = %d", $service_id));
         $duration = $service ? intval($service->duration) : 60;
-
         $events = array();
-
         $current = new DateTime($start_date);
         $end     = new DateTime($end_date);
-
         while ($current < $end) {
             $ymd = $current->format('Y-m-d');
-
-            // 1. 定休日・休業日チェック
             if ($this->is_store_closed($ymd) || $this->is_staff_off($ymd, $staff_id)) {
-                $events[] = array(
-                    'start' => $ymd,
-                    'display' => 'background',
-                    'classNames' => ['edel-day-closed'], // CSS用クラス
-                    'extendedProps' => array('is_closed' => true)
-                );
+                $events[] = array('start' => $ymd, 'display' => 'background', 'classNames' => ['edel-day-closed'], 'extendedProps' => array('is_closed' => true));
             } else {
-                // 2. 空き状況計算
                 $segments = $this->availability->get_availability_timeline($ymd, $staff_id, $service_id);
                 $has_free = $this->availability->has_available_slot($ymd, $staff_id, $service_id);
-
-                // バー表示用HTML
                 $am_html = $this->generate_bar_html($ymd, $segments, 0, 12);
                 $pm_html = $this->generate_bar_html($ymd, $segments, 12, 24);
-
-                // 記号判定用: 空き時間の総和を計算
                 $total_free_mins = 0;
-                $total_work_mins = 0; // シフト全体の時間（休憩除く）があればより正確だが、簡易的に計算
-
-                // シフト時間を取得して分母にする
+                $total_work_mins = 0;
                 $work_data = $this->get_staff_work_hours($ymd, $staff_id);
                 if ($work_data) {
                     $start_ts = strtotime($ymd . ' ' . $work_data['start']);
                     $end_ts   = strtotime($ymd . ' ' . $work_data['end']);
                     $total_work_mins = ($end_ts - $start_ts) / 60;
                 }
-
                 foreach ($segments as $seg) {
                     $total_free_mins += ($seg['end'] - $seg['start']) / 60;
                 }
-
-                // 割合計算
                 $symbol = '×';
                 if ($has_free && $total_work_mins > 0) {
                     $ratio = $total_free_mins / $total_work_mins;
-                    if ($ratio >= 0.5) {
-                        $symbol = '◎';
-                    } elseif ($ratio >= 0.2) {
-                        $symbol = '○';
-                    } else {
-                        $symbol = '△';
-                    }
+                    if ($ratio >= 0.5) $symbol = '◎';
+                    elseif ($ratio >= 0.2) $symbol = '○';
+                    else $symbol = '△';
                 } elseif ($has_free) {
-                    // work_minsが取れなかった場合の保険
                     $symbol = '△';
                 }
-
-                $events[] = array(
-                    'start' => $ymd,
-                    'display' => 'background',
-                    'extendedProps' => array(
-                        'am_bar' => $am_html,
-                        'pm_bar' => $pm_html,
-                        'is_open' => $has_free,
-                        'symbol'  => $symbol // 記号
-                    )
-                );
+                $events[] = array('start' => $ymd, 'display' => 'background', 'extendedProps' => array('am_bar' => $am_html, 'pm_bar' => $pm_html, 'is_open' => $has_free, 'symbol' => $symbol));
             }
-
             $current->modify('+1 day');
         }
-
         wp_send_json_success($events);
     }
 
-    // Helper for get_calendar_status (work hours)
     private function get_staff_work_hours($date, $staff_id) {
-        // 重複コードになりますがAvailabilityクラスのprivateメソッドにはアクセスできないため再定義
-        // (本来はAvailabilityクラスにpublicメソッドを追加するのが綺麗ですが、今回はAjax内で完結させます)
         global $wpdb;
         $table_exceptions = $wpdb->prefix . 'edel_booking_schedule_exceptions';
         $exception = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_exceptions WHERE staff_id = %d AND exception_date = %s", $staff_id, $date));
@@ -285,7 +225,6 @@ class EdelBookingProAjax {
     }
 
     public function save_booking() {
-        // ... (省略なしで前回と同様の内容) ...
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, '_ajax_nonce');
         if (!current_user_can('edit_posts')) wp_send_json_error('権限がありません。');
         global $wpdb;
@@ -304,9 +243,9 @@ class EdelBookingProAjax {
         $end_ts = $start_ts + ($service->duration * 60);
         $end_datetime = date('Y-m-d H:i:s', $end_ts);
         $occupied_start_ts = $start_ts - ($service->buffer_before * 60);
-        $occupied_end_ts   = $end_ts + ($service->buffer_after * 60);
+        $occupied_end_ts = $end_ts + ($service->buffer_after * 60);
         $occupied_start = date('Y-m-d H:i:s', $occupied_start_ts);
-        $occupied_end   = date('Y-m-d H:i:s', $occupied_end_ts);
+        $occupied_end = date('Y-m-d H:i:s', $occupied_end_ts);
         $result = $wpdb->insert($wpdb->prefix . 'edel_booking_appointments', array('booking_hash' => wp_generate_password(32, false), 'staff_id' => $staff_id, 'service_id' => $service_id, 'start_datetime' => $start_datetime, 'end_datetime' => $end_datetime, 'occupied_start' => $occupied_start, 'occupied_end' => $occupied_end, 'customer_name' => $customer_name, 'customer_email' => $customer_email, 'customer_phone' => $customer_phone, 'note' => $note, 'status' => 'confirmed',), array('%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
         if ($result) {
             $staff = get_userdata($staff_id);
@@ -318,6 +257,9 @@ class EdelBookingProAjax {
         }
     }
 
+    /**
+     * フロントからの予約送信 (★修正: カスタムフィールド保存対応)
+     */
     public function submit_booking_front() {
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, 'nonce');
         global $wpdb;
@@ -329,8 +271,30 @@ class EdelBookingProAjax {
         $email = sanitize_email($_POST['customer_email']);
         $phone = sanitize_text_field($_POST['customer_phone']);
         $note = sanitize_textarea_field($_POST['note']);
+
+        // ★カスタムフィールド処理
+        $custom_data_json = NULL;
+        if (isset($_POST['edel_custom_fields']) && is_array($_POST['edel_custom_fields'])) {
+            $custom_fields_config = isset($this->settings['custom_fields']) ? $this->settings['custom_fields'] : array();
+            $saved_custom_data = array();
+
+            foreach ($custom_fields_config as $idx => $conf) {
+                $val = isset($_POST['edel_custom_fields'][$idx]) ? sanitize_text_field($_POST['edel_custom_fields'][$idx]) : '';
+                // ラベルと値をペアで保存 (設定変更に強くするため)
+                $saved_custom_data[] = array(
+                    'label' => $conf['label'],
+                    'value' => $val
+                );
+            }
+            if (!empty($saved_custom_data)) {
+                $custom_data_json = json_encode($saved_custom_data, JSON_UNESCAPED_UNICODE);
+            }
+        }
+
         $create_account = isset($_POST['create_account']) && $_POST['create_account'] == '1';
+
         if (!$staff_id || !$service_id || !$date || !$time || !$name || !$email) wp_send_json_error('入力内容に不備があります。');
+
         $customer_id = NULL;
         $new_password = NULL;
         $account_created = false;
@@ -352,6 +316,7 @@ class EdelBookingProAjax {
                 }
             }
         }
+
         $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}edel_booking_services WHERE id = %d", $service_id));
         if (!$service) wp_send_json_error('サービスが無効です。');
         $start_datetime = $date . ' ' . $time . ':00';
@@ -364,16 +329,48 @@ class EdelBookingProAjax {
         $occupied_end = date('Y-m-d H:i:s', $occupied_end_ts);
         $collision = $wpdb->get_var($wpdb->prepare("SELECT count(*) FROM {$wpdb->prefix}edel_booking_appointments WHERE staff_id = %d AND status IN ('confirmed', 'pending') AND occupied_start < %s AND occupied_end > %s", $staff_id, $occupied_end, $occupied_start));
         if ($collision > 0) wp_send_json_error('申し訳ありません。タッチの差でその時間は埋まってしまいました。');
-        $insert = $wpdb->insert($wpdb->prefix . 'edel_booking_appointments', array('booking_hash' => wp_generate_password(32, false), 'customer_id' => $customer_id, 'staff_id' => $staff_id, 'service_id' => $service_id, 'start_datetime' => $start_datetime, 'end_datetime' => $end_datetime, 'occupied_start' => $occupied_start, 'occupied_end' => $occupied_end, 'customer_name' => $name, 'customer_email' => $email, 'customer_phone' => $phone, 'note' => $note, 'status' => 'confirmed'), array('%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'));
+
+        $insert = $wpdb->insert(
+            $wpdb->prefix . 'edel_booking_appointments',
+            array(
+                'booking_hash' => wp_generate_password(32, false),
+                'customer_id' => $customer_id,
+                'staff_id' => $staff_id,
+                'service_id' => $service_id,
+                'start_datetime' => $start_datetime,
+                'end_datetime' => $end_datetime,
+                'occupied_start' => $occupied_start,
+                'occupied_end' => $occupied_end,
+                'customer_name' => $name,
+                'customer_email' => $email,
+                'customer_phone' => $phone,
+                'note' => $note,
+                'custom_data' => $custom_data_json, // ★保存
+                'status' => 'confirmed'
+            ),
+            array('%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+        );
+
         if (!$insert) wp_send_json_error('予約の保存に失敗しました。');
+
         $staff = get_userdata($staff_id);
-        $booking_data = array('customer_name' => $name, 'customer_email' => $email, 'staff_id' => $staff_id, 'date' => $date, 'time' => $time, 'end_time' => date('H:i', $end_ts), 'note' => $note, 'new_password' => $new_password);
+        $booking_data = array(
+            'customer_name' => $name,
+            'customer_email' => $email,
+            'staff_id' => $staff_id,
+            'date' => $date,
+            'time' => $time,
+            'end_time' => date('H:i', $end_ts),
+            'note' => $note,
+            'custom_data' => $custom_data_json, // ★メール用
+            'new_password' => $new_password
+        );
         $this->emails->send_booking_confirmation($booking_data, $service->title, $staff->display_name);
         wp_send_json_success(array('message' => '予約完了', 'created_account' => $account_created));
     }
 
+    // cancel_booking, mypage_login, mypage_lost_password, mypage_change_password は変更なしのため省略
     public function cancel_booking() {
-        // ... (省略なしで前回と同様の内容) ...
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, 'nonce');
         if (!is_user_logged_in()) wp_send_json_error('ログインが必要です。');
         $booking_id = intval($_POST['booking_id']);
@@ -395,8 +392,6 @@ class EdelBookingProAjax {
         $this->emails->send_cancellation($booking, $staff->display_name);
         wp_send_json_success('キャンセルしました。');
     }
-
-    // mypage_login, mypage_lost_password, mypage_change_password は変更なしのため省略なしで記述
     public function mypage_login() {
         check_ajax_referer('edel-booking-pro', 'nonce');
         $email = sanitize_email($_POST['email']);

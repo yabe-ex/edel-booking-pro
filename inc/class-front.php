@@ -36,12 +36,10 @@ class EdelBookingProFront {
         $show_price = isset($settings['show_price']) ? intval($settings['show_price']) : 1;
         $hide_service = isset($settings['hide_service']) ? 1 : 0;
         $hide_staff   = isset($settings['hide_staff']) ? 1 : 0;
+        $calendar_mode = isset($settings['calendar_mode']) ? $settings['calendar_mode'] : 'bar';
 
         $mypage_id = isset($settings['mypage_id']) ? intval($settings['mypage_id']) : 0;
         $mypage_url = ($mypage_id > 0) ? get_permalink($mypage_id) : home_url();
-
-        // ★新規: カレンダーモード
-        $calendar_mode = isset($settings['calendar_mode']) ? $settings['calendar_mode'] : 'bar';
 
         global $wpdb;
         $services = $wpdb->get_results("SELECT id, price, duration FROM {$wpdb->prefix}edel_booking_services");
@@ -79,8 +77,8 @@ class EdelBookingProFront {
             'show_price' => $show_price,
             'hide_service' => $hide_service,
             'hide_staff'   => $hide_staff,
+            'calendar_mode' => $calendar_mode,
             'mypage_url'   => $mypage_url,
-            'calendar_mode' => $calendar_mode, // JSへ渡す
             'base_prices' => $service_prices,
             'durations'   => $service_durations,
             'custom_prices' => $staff_custom_prices,
@@ -93,8 +91,6 @@ class EdelBookingProFront {
     }
 
     public function render_booking_form($atts) {
-        // ... (前回の完全版コードと同じなので省略。そのままお使いください) ...
-        // ※このメソッドは前回から変更ありません。
         global $wpdb;
         $services = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}edel_booking_services WHERE is_active = 1");
         $staffs   = get_users(array('meta_key' => 'is_edel_staff', 'meta_value' => 1));
@@ -120,6 +116,9 @@ class EdelBookingProFront {
         $display_style = ($show_price === 1) ? '' : 'display:none;';
         $style_service_container = $hide_service ? 'display:none;' : '';
         $style_staff_container   = $hide_staff ? 'display:none;' : '';
+
+        // カスタムフィールド設定
+        $custom_fields = isset($settings['custom_fields']) ? $settings['custom_fields'] : array();
 
         $mypage_id = isset($settings['mypage_id']) ? intval($settings['mypage_id']) : 0;
         $mypage_url = ($mypage_id > 0) ? get_permalink($mypage_id) : home_url();
@@ -188,6 +187,49 @@ class EdelBookingProFront {
                         <label>電話番号</label>
                         <input type="tel" name="customer_phone" class="edel-input" placeholder="090-1234-5678">
                     </div>
+
+                    <?php if (!empty($custom_fields)): ?>
+                        <?php foreach ($custom_fields as $index => $field):
+                            $label = esc_html($field['label']);
+                            $type  = $field['type'];
+                            $req   = !empty($field['required']) ? 'required' : '';
+                            $req_mark = !empty($field['required']) ? '<span class="required">*</span>' : '';
+                            $options = array();
+                            if (!empty($field['options'])) {
+                                $options = array_map('trim', explode(',', $field['options']));
+                            }
+                        ?>
+                            <div class="edel-form-group">
+                                <label><?php echo $label . $req_mark; ?></label>
+
+                                <?php if ($type === 'text'): ?>
+                                    <input type="text" name="edel_custom_fields[<?php echo $index; ?>]" class="edel-input" <?php echo $req; ?>>
+
+                                <?php elseif ($type === 'textarea'): ?>
+                                    <textarea name="edel_custom_fields[<?php echo $index; ?>]" class="edel-input" rows="3" <?php echo $req; ?>></textarea>
+
+                                <?php elseif ($type === 'select'): ?>
+                                    <select name="edel_custom_fields[<?php echo $index; ?>]" class="edel-select" <?php echo $req; ?>>
+                                        <option value="">選択してください</option>
+                                        <?php foreach ($options as $opt): ?>
+                                            <option value="<?php echo esc_attr($opt); ?>"><?php echo esc_html($opt); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+
+                                <?php elseif ($type === 'radio'): ?>
+                                    <div style="margin-top:5px;">
+                                        <?php foreach ($options as $opt_idx => $opt): ?>
+                                            <label style="display:inline-block; margin-right:15px; font-weight:normal;">
+                                                <input type="radio" name="edel_custom_fields[<?php echo $index; ?>]" value="<?php echo esc_attr($opt); ?>" <?php echo ($req && $opt_idx === 0) ? 'required' : ''; ?>>
+                                                <?php echo esc_html($opt); ?>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
                     <div class="edel-form-group">
                         <label>備考</label>
                         <textarea name="note" class="edel-input" rows="3"></textarea>

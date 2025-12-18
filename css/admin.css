@@ -36,9 +36,8 @@
     color: #333;
 }
 
-/* アクティブなボタン */
 .edel-switch-btn.active {
-    background: #2271b1; /* WordPress標準の青 */
+    background: #2271b1;
     color: #fff;
     border-color: #2271b1;
 }
@@ -56,12 +55,11 @@
     font-size: 1.5em;
 }
 
-/* カレンダー内のイベント */
 #edel-admin-calendar .fc-event {
     cursor: pointer;
 }
 
-/* --- リストビュー (テーブル) --- */
+/* --- リストビュー --- */
 .edel-view-section {
     margin-top: 15px;
 }
@@ -98,4 +96,176 @@
     font-size: 12px;
     border: 1px solid #f9d0d4;
     font-weight: 500;
+}
+
+/* --- ★修正: カスタムフィールド設定用デザイン改善 --- */
+
+#edel-fields-wrapper {
+    margin-bottom: 20px;
+}
+
+/* カード型コンテナ */
+.edel-field-row.card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    margin-bottom: 20px; /* 余白を広めに */
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 行間の余白 */
+}
+
+/* 上段 (項目名、タイプ、必須) */
+.edel-field-header {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+/* 中段 (選択肢) */
+.edel-field-body {
+    width: 100%;
+}
+
+/* 下段 (削除ボタン) */
+.edel-field-footer {
+    text-align: right;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* 各カラム共通 */
+.edel-field-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.edel-field-col label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px; /* ラベルと入力欄の間の余白 */
+    color: #444;
+}
+
+.edel-field-col input[type='text'],
+.edel-field-col select {
+    max-width: 100%;
+}
+
+/* 個別サイズ調整 */
+.col-label {
+    flex: 2;
+    min-width: 200px;
+}
+.col-type {
+    flex: 1;
+    min-width: 150px;
+}
+.col-req {
+    flex: 0 0 80px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 選択肢の入力欄を広く */
+.col-options {
+    width: 100%;
+}
+.col-options input[type='text'] {
+    width: 100%; /* 横幅いっぱい */
+}
+
+/* 必須スイッチ (トグルボタン) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    margin-top: 5px;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 22px;
+}
+.slider:before {
+    position: absolute;
+    content: '';
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: #2271b1;
+}
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+/* 削除ボタン (文字) */
+.edel-remove-field-text {
+    color: #d63638 !important;
+    border-color: #d63638 !important;
+    background: transparent !important;
+}
+.edel-remove-field-text:hover {
+    background: #d63638 !important;
+    color: #fff !important;
+}
+
+.description {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #777;
+}
+
+.required {
+    color: #d63638;
+}
+
+/* 追加ボタン */
+.edel-add-field-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold !important;
+}
+
+/* レスポンシブ対応 (スマホ) */
+@media screen and (max-width: 600px) {
+    .edel-field-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .col-label,
+    .col-type {
+        width: 100%;
+    }
+    .col-req {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 5px;
+    }
+    .col-req label:first-child {
+        margin-bottom: 0;
+    }
 }

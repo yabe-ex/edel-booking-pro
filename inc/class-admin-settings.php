@@ -5,32 +5,23 @@ class EdelBookingProAdminSettings {
     private $option_name = 'edel_booking_settings';
 
     public function render() {
+        // 設定保存処理
         if (isset($_POST['edel_save_settings']) && check_admin_referer('edel_save_settings_action')) {
             $this->save_settings();
             echo '<div class="notice notice-success is-dismissible"><p>設定を保存しました。</p></div>';
         }
 
+        // 設定値の取得
         $settings = get_option($this->option_name, array());
 
+        // --- 既存設定 ---
         $shop_name = isset($settings['shop_name']) ? $settings['shop_name'] : get_bloginfo('name');
-        $reminder_timing = isset($settings['reminder_timing']) ? intval($settings['reminder_timing']) : 1;
-        $show_price = isset($settings['show_price']) ? intval($settings['show_price']) : 1;
-        $cancel_limit = isset($settings['cancel_limit']) ? intval($settings['cancel_limit']) : 1;
-        $closed_days = isset($settings['closed_days']) ? $settings['closed_days'] : array();
-
         $mypage_id = isset($settings['mypage_id']) ? intval($settings['mypage_id']) : 0;
+        $closed_days = isset($settings['closed_days']) ? $settings['closed_days'] : array();
+        $cancel_limit = isset($settings['cancel_limit']) ? intval($settings['cancel_limit']) : 1;
 
-        $sender_name  = isset($settings['sender_name']) ? $settings['sender_name'] : get_bloginfo('name');
-        $sender_email = isset($settings['sender_email']) ? $settings['sender_email'] : get_option('admin_email');
-        $admin_emails = isset($settings['admin_emails']) ? $settings['admin_emails'] : get_option('admin_email');
-
-        $val_book_sub  = isset($settings['email_book_sub']) ? $settings['email_book_sub'] : '';
-        $val_book_body = isset($settings['email_book_body']) ? $settings['email_book_body'] : '';
-        $val_remind_sub  = isset($settings['email_remind_sub']) ? $settings['email_remind_sub'] : '';
-        $val_remind_body = isset($settings['email_remind_body']) ? $settings['email_remind_body'] : '';
-
-        // フロント表示設定
-        $calendar_mode = isset($settings['calendar_mode']) ? $settings['calendar_mode'] : 'bar'; // ★新規: デフォルトはバー
+        $show_price = isset($settings['show_price']) ? intval($settings['show_price']) : 1;
+        $calendar_mode = isset($settings['calendar_mode']) ? $settings['calendar_mode'] : 'bar';
 
         $label_service = isset($settings['label_service']) ? $settings['label_service'] : 'メニュー';
         $label_staff   = isset($settings['label_staff']) ? $settings['label_staff'] : '担当スタッフ';
@@ -39,6 +30,20 @@ class EdelBookingProAdminSettings {
         $default_service = isset($settings['default_service']) ? intval($settings['default_service']) : 0;
         $default_staff   = isset($settings['default_staff']) ? intval($settings['default_staff']) : 0;
 
+        $sender_name  = isset($settings['sender_name']) ? $settings['sender_name'] : get_bloginfo('name');
+        $sender_email = isset($settings['sender_email']) ? $settings['sender_email'] : get_option('admin_email');
+        $admin_emails = isset($settings['admin_emails']) ? $settings['admin_emails'] : get_option('admin_email');
+        $reminder_timing = isset($settings['reminder_timing']) ? intval($settings['reminder_timing']) : 1;
+
+        $val_book_sub  = isset($settings['email_book_sub']) ? $settings['email_book_sub'] : '';
+        $val_book_body = isset($settings['email_book_body']) ? $settings['email_book_body'] : '';
+        $val_remind_sub  = isset($settings['email_remind_sub']) ? $settings['email_remind_sub'] : '';
+        $val_remind_body = isset($settings['email_remind_body']) ? $settings['email_remind_body'] : '';
+
+        // カスタムフィールド設定
+        $custom_fields = isset($settings['custom_fields']) ? $settings['custom_fields'] : array();
+
+        // 外部データ
         global $wpdb;
         $services = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}edel_booking_services WHERE is_active = 1");
         $staffs   = get_users(array('meta_key' => 'is_edel_staff', 'meta_value' => 1));
@@ -47,11 +52,18 @@ class EdelBookingProAdminSettings {
 ?>
         <div class="wrap">
             <h1>Edel Booking Pro 設定</h1>
+
+            <h2 class="nav-tab-wrapper">
+                <a href="#tab-general" class="nav-tab nav-tab-active" onclick="switchTab(event, 'general')">一般設定</a>
+                <a href="#tab-display" class="nav-tab" onclick="switchTab(event, 'display')">表示設定</a>
+                <a href="#tab-fields" class="nav-tab" onclick="switchTab(event, 'fields')">カスタムフィールド</a>
+                <a href="#tab-mail" class="nav-tab" onclick="switchTab(event, 'mail')">メール設定</a>
+            </h2>
+
             <form method="post" action="">
                 <?php wp_nonce_field('edel_save_settings_action'); ?>
 
-                <div class="edel-settings-box">
-                    <h2>一般設定</h2>
+                <div id="tab-general" class="edel-tab-content active">
                     <table class="form-table">
                         <tr>
                             <th scope="row"><label>店舗名 / 署名</label></th>
@@ -83,87 +95,84 @@ class EdelBookingProAdminSettings {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <p class="description">※選択したページにはショートコード <code>[edel_mypage]</code> を設置してください。</p>
                             </td>
                         </tr>
                     </table>
                 </div>
 
-                <div class="edel-settings-box">
-                    <h2>予約フォーム表示設定</h2>
+                <div id="tab-display" class="edel-tab-content" style="display:none;">
                     <table class="form-table">
                         <tr>
                             <th>カレンダー表示モード</th>
                             <td>
-                                <label style="margin-right:15px;"><input type="radio" name="settings[calendar_mode]" value="bar" <?php checked($calendar_mode, 'bar'); ?>> AM/PM バー表示 (デフォルト)</label>
+                                <label style="margin-right:15px;"><input type="radio" name="settings[calendar_mode]" value="bar" <?php checked($calendar_mode, 'bar'); ?>> AM/PM バー表示</label>
                                 <label><input type="radio" name="settings[calendar_mode]" value="symbol" <?php checked($calendar_mode, 'symbol'); ?>> 記号表示 (◎ ○ △ ×)</label>
-                                <p class="description">記号表示の場合、休業日はグレーアウトされます。</p>
                             </td>
                         </tr>
                         <tr>
                             <th>料金表示</th>
-                            <td>
-                                <label><input type="checkbox" name="settings[show_price]" value="1" <?php checked($show_price, 1); ?>> 料金を表示する</label>
-                            </td>
+                            <td><label><input type="checkbox" name="settings[show_price]" value="1" <?php checked($show_price, 1); ?>> 料金を表示する</label></td>
                         </tr>
                         <tr>
                             <th>「メニュー」項目</th>
                             <td>
-                                <div style="margin-bottom:10px;">
-                                    <label>ラベル名: <input type="text" name="settings[label_service]" value="<?php echo esc_attr($label_service); ?>" class="regular-text"></label>
-                                </div>
-                                <div style="margin-bottom:10px;">
-                                    <label>デフォルト選択:
-                                        <select name="settings[default_service]">
-                                            <option value="0">なし</option>
-                                            <?php foreach ($services as $s): ?>
-                                                <option value="<?php echo $s->id; ?>" <?php selected($default_service, $s->id); ?>><?php echo esc_html($s->title); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </label>
-                                </div>
-                                <div>
-                                    <label><input type="checkbox" name="settings[hide_service]" value="1" <?php checked($hide_service, 1); ?>> 選択肢を隠す</label>
-                                </div>
+                                <div style="margin-bottom:5px;"><label>ラベル名: <input type="text" name="settings[label_service]" value="<?php echo esc_attr($label_service); ?>" class="regular-text"></label></div>
+                                <div style="margin-bottom:5px;"><label>デフォルト: <select name="settings[default_service]">
+                                            <option value="0">なし</option><?php foreach ($services as $s): ?><option value="<?php echo $s->id; ?>" <?php selected($default_service, $s->id); ?>><?php echo esc_html($s->title); ?></option><?php endforeach; ?>
+                                        </select></label></div>
+                                <div><label><input type="checkbox" name="settings[hide_service]" value="1" <?php checked($hide_service, 1); ?>> 選択肢を隠す</label></div>
                             </td>
                         </tr>
                         <tr>
                             <th>「スタッフ」項目</th>
                             <td>
-                                <div style="margin-bottom:10px;">
-                                    <label>ラベル名: <input type="text" name="settings[label_staff]" value="<?php echo esc_attr($label_staff); ?>" class="regular-text"></label>
-                                </div>
-                                <div style="margin-bottom:10px;">
-                                    <label>デフォルト選択:
-                                        <select name="settings[default_staff]">
-                                            <option value="0">なし</option>
-                                            <?php foreach ($staffs as $st): ?>
-                                                <option value="<?php echo $st->ID; ?>" <?php selected($default_staff, $st->ID); ?>><?php echo esc_html($st->display_name); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </label>
-                                </div>
-                                <div>
-                                    <label><input type="checkbox" name="settings[hide_staff]" value="1" <?php checked($hide_staff, 1); ?>> 選択肢を隠す</label>
-                                </div>
+                                <div style="margin-bottom:5px;"><label>ラベル名: <input type="text" name="settings[label_staff]" value="<?php echo esc_attr($label_staff); ?>" class="regular-text"></label></div>
+                                <div style="margin-bottom:5px;"><label>デフォルト: <select name="settings[default_staff]">
+                                            <option value="0">なし</option><?php foreach ($staffs as $st): ?><option value="<?php echo $st->ID; ?>" <?php selected($default_staff, $st->ID); ?>><?php echo esc_html($st->display_name); ?></option><?php endforeach; ?>
+                                        </select></label></div>
+                                <div><label><input type="checkbox" name="settings[hide_staff]" value="1" <?php checked($hide_staff, 1); ?>> 選択肢を隠す</label></div>
                             </td>
                         </tr>
                     </table>
                 </div>
 
-                <div class="edel-settings-box">
-                    <h2>メール設定</h2>
+                <div id="tab-fields" class="edel-tab-content" style="display:none;">
+                    <h3>予約フォーム入力項目の追加</h3>
+                    <p class="description" style="margin-bottom:20px;">「お名前」「メール」「電話番号」「備考」以外に聞きたい項目がある場合に追加してください。</p>
+
+                    <div id="edel-fields-wrapper">
+                        <?php
+                        if (!empty($custom_fields)) {
+                            foreach ($custom_fields as $index => $field) {
+                                $this->render_field_row($index, $field);
+                            }
+                        }
+                        ?>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="button" class="button button-primary button-large edel-add-field-btn" onclick="addCustomField()">
+                            <span class="dashicons dashicons-plus-alt2" style="vertical-align: text-bottom;"></span> フィールドを追加
+                        </button>
+                    </div>
+
+                    <div id="edel-field-template" style="display:none;">
+                        <?php $this->render_field_row('INDEX', array()); ?>
+                    </div>
+                </div>
+
+                <div id="tab-mail" class="edel-tab-content" style="display:none;">
                     <table class="form-table">
                         <tr>
                             <th scope="row">差出人名</th>
                             <td><input type="text" name="settings[sender_name]" value="<?php echo esc_attr($sender_name); ?>" class="regular-text"></td>
                         </tr>
                         <tr>
-                            <th scope="row">差出人メールアドレス</th>
+                            <th scope="row">差出人メール</th>
                             <td><input type="email" name="settings[sender_email]" value="<?php echo esc_attr($sender_email); ?>" class="regular-text"></td>
                         </tr>
                         <tr>
-                            <th scope="row">管理者通知先メール</th>
+                            <th scope="row">管理者通知先</th>
                             <td><textarea name="settings[admin_emails]" rows="2" class="large-text"><?php echo esc_textarea($admin_emails); ?></textarea></td>
                         </tr>
                         <tr>
@@ -196,47 +205,107 @@ class EdelBookingProAdminSettings {
                     </table>
                 </div>
 
+                <hr style="margin-top:30px;">
                 <?php submit_button('設定を保存'); ?>
                 <input type="hidden" name="edel_save_settings" value="1">
             </form>
         </div>
 
-        <style>
-            .edel-settings-box {
-                background: #fff;
-                padding: 20px;
-                border: 1px solid #ccd0d4;
-                margin-bottom: 20px;
-                max-width: 800px;
+        <script>
+            function switchTab(e, tabId) {
+                e.preventDefault();
+                var tabs = document.querySelectorAll('.nav-tab');
+                var contents = document.querySelectorAll('.edel-tab-content');
+
+                tabs.forEach(function(el) {
+                    el.classList.remove('nav-tab-active');
+                });
+                contents.forEach(function(el) {
+                    el.style.display = 'none';
+                });
+
+                e.target.classList.add('nav-tab-active');
+                document.getElementById('tab-' + tabId).style.display = 'block';
             }
 
-            .edel-settings-box h2 {
-                margin-top: 0;
-                padding-bottom: 10px;
-                border-bottom: 1px solid #eee;
-                font-size: 1.2em;
+            function addCustomField() {
+                var wrapper = document.getElementById('edel-fields-wrapper');
+                var template = document.getElementById('edel-field-template').innerHTML;
+                var index = new Date().getTime();
+                var html = template.replace(/INDEX/g, index);
+
+                var div = document.createElement('div');
+                div.innerHTML = html;
+                wrapper.appendChild(div.firstElementChild);
             }
-        </style>
+
+            function removeField(btn) {
+                if (confirm('このフィールドを削除しますか？')) {
+                    btn.closest('.edel-field-row').remove();
+                }
+            }
+        </script>
+    <?php
+    }
+
+    // --- カスタムフィールド行のHTML生成ヘルパー (★修正: ボタンをテキスト化) ---
+    private function render_field_row($index, $data) {
+        $label = isset($data['label']) ? $data['label'] : '';
+        $type  = isset($data['type']) ? $data['type'] : 'text';
+        $req   = isset($data['required']) ? $data['required'] : 0;
+        $opts  = isset($data['options']) ? $data['options'] : '';
+    ?>
+        <div class="edel-field-row card">
+            <div class="edel-field-header">
+                <div class="edel-field-col col-label">
+                    <label>項目名 <span class="required">*</span></label>
+                    <input type="text" name="settings[custom_fields][<?php echo $index; ?>][label]" value="<?php echo esc_attr($label); ?>" placeholder="例: 性別" required>
+                </div>
+                <div class="edel-field-col col-type">
+                    <label>タイプ</label>
+                    <select name="settings[custom_fields][<?php echo $index; ?>][type]">
+                        <option value="text" <?php selected($type, 'text'); ?>>1行テキスト</option>
+                        <option value="textarea" <?php selected($type, 'textarea'); ?>>複数行テキスト</option>
+                        <option value="radio" <?php selected($type, 'radio'); ?>>ラジオボタン</option>
+                        <option value="select" <?php selected($type, 'select'); ?>>セレクトボックス</option>
+                    </select>
+                </div>
+                <div class="edel-field-col col-req">
+                    <label>必須</label>
+                    <label class="switch">
+                        <input type="checkbox" name="settings[custom_fields][<?php echo $index; ?>][required]" value="1" <?php checked($req, 1); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="edel-field-body">
+                <div class="edel-field-col col-options">
+                    <label>選択肢 (ラジオ/セレクト用)</label>
+                    <input type="text" name="settings[custom_fields][<?php echo $index; ?>][options]" value="<?php echo esc_attr($opts); ?>" placeholder="カンマ(,)区切りで入力 (例: 男性, 女性)">
+                    <p class="description">※タイプがラジオボタンかセレクトボックスの場合のみ有効です。</p>
+                </div>
+            </div>
+
+            <div class="edel-field-footer">
+                <button type="button" class="button edel-remove-field-text" onclick="removeField(this)">削除</button>
+            </div>
+        </div>
 <?php
     }
 
     private function save_settings() {
+        // (変更なし、省略せず記述)
         $input = $_POST['settings'];
         $clean = array();
 
         $clean['shop_name'] = sanitize_text_field($input['shop_name']);
-        $clean['show_price'] = isset($input['show_price']) ? 1 : 0;
-        $clean['cancel_limit'] = intval($input['cancel_limit']);
-        $clean['closed_days'] = isset($input['closed_days']) ? $input['closed_days'] : array();
         $clean['mypage_id'] = intval($input['mypage_id']);
+        $clean['closed_days'] = isset($input['closed_days']) ? $input['closed_days'] : array();
+        $clean['cancel_limit'] = intval($input['cancel_limit']);
 
-        $clean['sender_name']  = sanitize_text_field($input['sender_name']);
-        $clean['sender_email'] = sanitize_email($input['sender_email']);
-        $clean['admin_emails'] = sanitize_textarea_field($input['admin_emails']);
-
-        // ★新規: 保存
         $clean['calendar_mode'] = isset($input['calendar_mode']) ? $input['calendar_mode'] : 'bar';
-
+        $clean['show_price'] = isset($input['show_price']) ? 1 : 0;
         $clean['label_service'] = sanitize_text_field($input['label_service']);
         $clean['label_staff']   = sanitize_text_field($input['label_staff']);
         $clean['hide_service']  = isset($input['hide_service']) ? 1 : 0;
@@ -244,11 +313,28 @@ class EdelBookingProAdminSettings {
         $clean['default_service'] = intval($input['default_service']);
         $clean['default_staff']   = intval($input['default_staff']);
 
+        $clean['sender_name']  = sanitize_text_field($input['sender_name']);
+        $clean['sender_email'] = sanitize_email($input['sender_email']);
+        $clean['admin_emails'] = sanitize_textarea_field($input['admin_emails']);
         $clean['reminder_timing'] = intval($input['reminder_timing']);
         $clean['email_book_sub'] = sanitize_text_field($input['email_book_sub']);
         $clean['email_book_body'] = sanitize_textarea_field($input['email_book_body']);
         $clean['email_remind_sub'] = sanitize_text_field($input['email_remind_sub']);
         $clean['email_remind_body'] = sanitize_textarea_field($input['email_remind_body']);
+
+        $clean_fields = array();
+        if (isset($input['custom_fields']) && is_array($input['custom_fields'])) {
+            foreach ($input['custom_fields'] as $key => $field) {
+                if (empty($field['label'])) continue;
+                $clean_fields[] = array(
+                    'label' => sanitize_text_field($field['label']),
+                    'type'  => sanitize_text_field($field['type']),
+                    'required' => isset($field['required']) ? 1 : 0,
+                    'options' => sanitize_text_field($field['options'])
+                );
+            }
+        }
+        $clean['custom_fields'] = $clean_fields;
 
         update_option($this->option_name, $clean);
     }
