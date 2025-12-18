@@ -11,7 +11,7 @@ jQuery(document).ready(function ($) {
         $('.edel-view-section').hide();
         $('#edel-view-' + view).fadeIn(200);
 
-        // カレンダー表示時にサイズを再計算 (FullCalendarの表示崩れ防止)
+        // カレンダー表示時にサイズを再計算
         if (view === 'calendar' && calendar) {
             setTimeout(function () {
                 calendar.updateSize();
@@ -41,7 +41,7 @@ jQuery(document).ready(function ($) {
                 list: 'リスト'
             },
             navLinks: true,
-            editable: false, // 管理画面でもドラッグ移動は誤操作の元なので無効化
+            editable: false,
 
             // イベントデータの取得 (Ajax)
             events: {
@@ -49,7 +49,8 @@ jQuery(document).ready(function ($) {
                 method: 'GET',
                 extraParams: {
                     action: 'edel_fetch_events',
-                    nonce: edel_admin.nonce
+                    nonce: edel_admin.nonce,
+                    staff_id: edel_admin.staff_id // ★修正: スタッフIDを渡す
                 },
                 failure: function () {
                     alert('予約データの取得に失敗しました。');
@@ -58,6 +59,11 @@ jQuery(document).ready(function ($) {
 
             // イベントクリック時の簡易詳細表示
             eventClick: function (info) {
+                // 背景イベント(空き時間表示)の場合はクリックしても何もしない
+                if (info.event.display === 'background') {
+                    return;
+                }
+
                 var props = info.event.extendedProps;
                 var msg = '【予約詳細】\n\n';
                 msg += '日時: ' + info.event.start.toLocaleString() + '\n';

@@ -5,50 +5,60 @@ class EdelBookingProAdminSettings {
     private $option_name = 'edel_booking_settings';
 
     public function render() {
-        // 設定保存処理
-        if (isset($_POST['edel_save_settings']) && check_admin_referer('edel_save_settings_action')) {
-            $this->save_settings();
-            echo '<div class="notice notice-success is-dismissible"><p>設定を保存しました。</p></div>';
+        // ---------------------------------------------------------
+        // 1. 保存処理
+        // ---------------------------------------------------------
+        if (isset($_POST['edel_save_settings_btn'])) {
+            if (check_admin_referer('edel_save_settings_action')) {
+                $this->save_settings();
+                echo '<div class="notice notice-success is-dismissible"><p>設定を保存しました。</p></div>';
+            } else {
+                echo '<div class="notice notice-error is-dismissible"><p>セキュリティチェックに失敗しました。</p></div>';
+            }
         }
 
-        // 設定値の取得
+        // ---------------------------------------------------------
+        // 2. 設定値の読み込み
+        // ---------------------------------------------------------
         $settings = get_option($this->option_name, array());
 
-        // --- 既存設定 ---
-        $shop_name = isset($settings['shop_name']) ? $settings['shop_name'] : get_bloginfo('name');
-        $mypage_id = isset($settings['mypage_id']) ? intval($settings['mypage_id']) : 0;
-        $closed_days = isset($settings['closed_days']) ? $settings['closed_days'] : array();
+        // --- 一般設定 ---
+        $shop_name    = isset($settings['shop_name']) ? $settings['shop_name'] : get_bloginfo('name');
+        $mypage_id    = isset($settings['mypage_id']) ? intval($settings['mypage_id']) : 0;
+        $closed_days  = isset($settings['closed_days']) ? $settings['closed_days'] : array();
         $cancel_limit = isset($settings['cancel_limit']) ? intval($settings['cancel_limit']) : 1;
 
-        $show_price = isset($settings['show_price']) ? intval($settings['show_price']) : 1;
+        // --- 表示設定 ---
+        $show_price    = isset($settings['show_price']) ? intval($settings['show_price']) : 1;
         $calendar_mode = isset($settings['calendar_mode']) ? $settings['calendar_mode'] : 'bar';
-
         $label_service = isset($settings['label_service']) ? $settings['label_service'] : 'メニュー';
         $label_staff   = isset($settings['label_staff']) ? $settings['label_staff'] : '担当スタッフ';
-        $hide_service = isset($settings['hide_service']) ? intval($settings['hide_service']) : 0;
-        $hide_staff   = isset($settings['hide_staff']) ? intval($settings['hide_staff']) : 0;
+        $hide_service  = isset($settings['hide_service']) ? intval($settings['hide_service']) : 0;
+        $hide_staff    = isset($settings['hide_staff']) ? intval($settings['hide_staff']) : 0;
         $default_service = isset($settings['default_service']) ? intval($settings['default_service']) : 0;
         $default_staff   = isset($settings['default_staff']) ? intval($settings['default_staff']) : 0;
 
-        $sender_name  = isset($settings['sender_name']) ? $settings['sender_name'] : get_bloginfo('name');
-        $sender_email = isset($settings['sender_email']) ? $settings['sender_email'] : get_option('admin_email');
-        $admin_emails = isset($settings['admin_emails']) ? $settings['admin_emails'] : get_option('admin_email');
+        // --- メール設定 ---
+        $sender_name     = isset($settings['sender_name']) ? $settings['sender_name'] : get_bloginfo('name');
+        $sender_email    = isset($settings['sender_email']) ? $settings['sender_email'] : get_option('admin_email');
+        $admin_emails    = isset($settings['admin_emails']) ? $settings['admin_emails'] : get_option('admin_email');
         $reminder_timing = isset($settings['reminder_timing']) ? intval($settings['reminder_timing']) : 1;
 
-        $val_book_sub  = isset($settings['email_book_sub']) ? $settings['email_book_sub'] : '';
-        $val_book_body = isset($settings['email_book_body']) ? $settings['email_book_body'] : '';
+        $val_book_sub    = isset($settings['email_book_sub']) ? $settings['email_book_sub'] : '';
+        $val_book_body   = isset($settings['email_book_body']) ? $settings['email_book_body'] : '';
         $val_remind_sub  = isset($settings['email_remind_sub']) ? $settings['email_remind_sub'] : '';
         $val_remind_body = isset($settings['email_remind_body']) ? $settings['email_remind_body'] : '';
 
-        // カスタムフィールド設定
+        // --- カスタムフィールド設定 ---
         $custom_fields = isset($settings['custom_fields']) ? $settings['custom_fields'] : array();
 
-        // 外部データ
+        // マスタデータ
         global $wpdb;
         $services = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}edel_booking_services WHERE is_active = 1");
         $staffs   = get_users(array('meta_key' => 'is_edel_staff', 'meta_value' => 1));
-        $pages = get_pages();
+        $pages    = get_pages();
 
+        $current_url = admin_url('admin.php?page=edel-booking-settings');
 ?>
         <div class="wrap">
             <h1>Edel Booking Pro 設定</h1>
@@ -60,7 +70,7 @@ class EdelBookingProAdminSettings {
                 <a href="#tab-mail" class="nav-tab" onclick="switchTab(event, 'mail')">メール設定</a>
             </h2>
 
-            <form method="post" action="">
+            <form method="post" action="<?php echo esc_url($current_url); ?>">
                 <?php wp_nonce_field('edel_save_settings_action'); ?>
 
                 <div id="tab-general" class="edel-tab-content active">
@@ -155,10 +165,6 @@ class EdelBookingProAdminSettings {
                             <span class="dashicons dashicons-plus-alt2" style="vertical-align: text-bottom;"></span> フィールドを追加
                         </button>
                     </div>
-
-                    <div id="edel-field-template" style="display:none;">
-                        <?php $this->render_field_row('INDEX', array()); ?>
-                    </div>
                 </div>
 
                 <div id="tab-mail" class="edel-tab-content" style="display:none;">
@@ -206,9 +212,13 @@ class EdelBookingProAdminSettings {
                 </div>
 
                 <hr style="margin-top:30px;">
-                <?php submit_button('設定を保存'); ?>
-                <input type="hidden" name="edel_save_settings" value="1">
+                <input type="submit" name="edel_save_settings_btn" class="button button-primary" value="設定を保存">
             </form>
+
+            <div id="edel-field-template" style="display:none;">
+                <?php $this->render_field_row('INDEX', array()); ?>
+            </div>
+
         </div>
 
         <script>
@@ -248,7 +258,6 @@ class EdelBookingProAdminSettings {
     <?php
     }
 
-    // --- カスタムフィールド行のHTML生成ヘルパー (★修正: ボタンをテキスト化) ---
     private function render_field_row($index, $data) {
         $label = isset($data['label']) ? $data['label'] : '';
         $type  = isset($data['type']) ? $data['type'] : 'text';
@@ -295,7 +304,7 @@ class EdelBookingProAdminSettings {
     }
 
     private function save_settings() {
-        // (変更なし、省略せず記述)
+        if (!isset($_POST['settings'])) return;
         $input = $_POST['settings'];
         $clean = array();
 
