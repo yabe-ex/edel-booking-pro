@@ -1,0 +1,101 @@
+/* css/admin.css (管理画面用スタイル全コード) */
+
+/* --- 表示切り替えボタン --- */
+.edel-view-switcher {
+    margin: 20px 0;
+    display: flex;
+    gap: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    display: inline-flex;
+    overflow: hidden;
+    background: #fff;
+}
+
+.edel-switch-btn {
+    background: #f7f7f7;
+    border: none;
+    border-right: 1px solid #ccc;
+    padding: 10px 25px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.edel-switch-btn:last-child {
+    border-right: none;
+}
+
+.edel-switch-btn:hover {
+    background: #eee;
+    color: #333;
+}
+
+/* アクティブなボタン */
+.edel-switch-btn.active {
+    background: #2271b1; /* WordPress標準の青 */
+    color: #fff;
+    border-color: #2271b1;
+}
+
+/* --- カレンダービュー --- */
+#edel-admin-calendar {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    max-width: 100%;
+}
+
+#edel-admin-calendar .fc-toolbar-title {
+    font-size: 1.5em;
+}
+
+/* カレンダー内のイベント */
+#edel-admin-calendar .fc-event {
+    cursor: pointer;
+}
+
+/* --- リストビュー (テーブル) --- */
+.edel-view-section {
+    margin-top: 15px;
+}
+
+/* ステータスバッジ */
+.edel-status-confirmed {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: #e6ffed;
+    color: #27ae60;
+    font-size: 12px;
+    border: 1px solid #bef5cb;
+    font-weight: 500;
+}
+
+.edel-status-pending {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: #fff8e1;
+    color: #f39c12;
+    font-size: 12px;
+    border: 1px solid #ffe082;
+    font-weight: 500;
+}
+
+.edel-status-cancelled {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: #ffeef0;
+    color: #cb2431;
+    font-size: 12px;
+    border: 1px solid #f9d0d4;
+    font-weight: 500;
+}

@@ -1,0 +1,604 @@
+/* css/front.css (全コード) */
+
+/* --- フォント設定 (全体) --- */
+#edel-booking-app,
+.edel-mypage-container {
+    font-family: 'YakuHanJPs', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', Meiryo, sans-serif;
+    color: #444;
+    line-height: 1.6;
+}
+
+/* ============================================================
+   カレンダー (FullCalendar) デザイン修正
+   ============================================================ */
+
+/* カレンダータイトル (2025年12月) のフォント修正 */
+#edel-booking-app .fc-toolbar-title {
+    font-family: 'YakuHanJPs', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', Meiryo, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1.5em !important;
+    color: #333 !important;
+}
+
+/* 曜日ヘッダー (日, 月...) の装飾削除 */
+#edel-booking-app .fc-col-header-cell-cushion {
+    color: #333 !important; /* 青色を黒/グレーに */
+    text-decoration: none !important; /* 下線を消す */
+    font-weight: bold !important;
+    font-family: inherit !important;
+}
+#edel-booking-app .fc-col-header-cell-cushion:hover {
+    text-decoration: none !important;
+    color: #333 !important;
+}
+
+/* カレンダー本体 */
+#edel-booking-app #edel-front-calendar {
+    font-size: 0.95em;
+    background: #fff;
+    font-family: inherit;
+}
+
+#edel-booking-app .fc-daygrid-day-frame {
+    position: relative !important;
+    min-height: 90px !important; /* 少し高さを確保 */
+    padding-bottom: 5px !important;
+    border: 1px solid #f0f0f0;
+}
+
+#edel-booking-app .fc-daygrid-day-top {
+    flex-direction: row !important;
+    justify-content: center !important;
+    padding-top: 5px !important;
+    font-weight: bold !important;
+    z-index: 10 !important;
+    position: relative !important;
+    opacity: 1 !important;
+}
+#edel-booking-app .fc-daygrid-day-number {
+    color: #333;
+    text-decoration: none;
+    font-family: inherit;
+    white-space: nowrap; /* 改行を禁止 */
+}
+
+#edel-booking-app .fc-daygrid-day-events {
+    margin: 0 !important;
+    position: static !important;
+}
+
+#edel-booking-app .fc-bg-event {
+    background: transparent !important;
+    opacity: 1 !important;
+}
+
+/* --- AM/PMバー表示モード用 --- */
+#edel-booking-app .edel-day-bars {
+    position: absolute !important;
+    bottom: 6px !important;
+    left: 4px !important;
+    right: 4px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 3px !important;
+    z-index: 5;
+    pointer-events: none;
+}
+
+#edel-booking-app .edel-bar {
+    height: 12px !important;
+    background-color: #eee !important;
+    position: relative !important;
+    width: 100% !important;
+    border-radius: 2px !important;
+    overflow: hidden !important;
+}
+
+#edel-booking-app .edel-bar-label {
+    position: absolute !important;
+    left: 3px !important;
+    top: 0 !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    color: #fff !important;
+    z-index: 2 !important;
+    line-height: 12px !important;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5) !important;
+    letter-spacing: 0.5px;
+    font-family: sans-serif;
+}
+
+#edel-booking-app .edel-bar-segment {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    background-color: #f39c12 !important;
+    z-index: 1 !important;
+}
+
+/* --- 記号表示モード用 --- */
+#edel-booking-app .edel-symbol-container {
+    position: absolute !important;
+    top: 50% !important; /* 上から50%の位置を基準に */
+    left: 0 !important;
+    width: 100% !important;
+    text-align: center;
+    pointer-events: none;
+    transform: translateY(-35%) !important; /* 自身の高さの分ずらす（少し上気味にしてバランス調整） */
+    margin-top: 8px !important; /* 日付番号と重ならないように少し下げる */
+}
+
+.edel-mark {
+    font-size: 1.8em;
+    line-height: 1;
+    display: inline-block;
+}
+.edel-mark.circle-double {
+    color: #27ae60;
+} /* ◎ 緑 */
+.edel-mark.circle {
+    color: #27ae60;
+} /* ○ 緑 */
+.edel-mark.triangle {
+    color: #f39c12;
+} /* △ オレンジ */
+.edel-mark.cross {
+    color: #e74c3c;
+    font-size: 1.5em;
+} /* × 赤 */
+
+/* 定休日・休業日の背景 */
+#edel-booking-app .fc-daygrid-day.edel-day-closed {
+    background-color: #f5f5f5 !important; /* グレー背景 */
+    pointer-events: none !important; /* クリック不可 */
+}
+/* ホバー時の挙動 */
+#edel-booking-app .fc-daygrid-day:not(.edel-day-closed):hover {
+    background-color: #f0f8ff !important;
+    cursor: pointer !important;
+}
+#edel-booking-app .fc-day-today {
+    background-color: #fffcf0 !important;
+}
+
+/* ============================================================
+   以下、予約フォーム・マイページ等の共通スタイル
+   ============================================================ */
+
+/* アプリケーション全体コンテナ */
+#edel-booking-app {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px;
+    border: 1px solid #eee;
+    background: #fff;
+    border-radius: 8px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+#edel-booking-app * {
+    box-sizing: border-box;
+}
+
+#edel-booking-app h3 {
+    font-size: 1.3em;
+    margin-top: 0;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-weight: 600;
+}
+
+.edel-form-group {
+    margin-bottom: 25px;
+}
+.edel-form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #444;
+    font-size: 15px;
+}
+.edel-select,
+.edel-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #fff;
+    color: #333;
+    transition: border-color 0.3s;
+    font-family: inherit;
+}
+.edel-select:focus,
+.edel-input:focus {
+    border-color: #333;
+    outline: none;
+}
+.edel-input textarea {
+    resize: vertical;
+    line-height: 1.5;
+}
+.required {
+    color: #d63638;
+    margin-left: 4px;
+}
+
+/* ボタン */
+.edel-btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s, opacity 0.3s, transform 0.1s;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-family: inherit;
+}
+.edel-btn-primary {
+    background-color: #333;
+    color: white;
+}
+.edel-btn-primary:hover {
+    background-color: #555;
+}
+.edel-btn-primary:active {
+    transform: translateY(1px);
+}
+.edel-btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+.edel-btn-back {
+    background-color: #f0f0f1;
+    color: #333;
+    margin-top: 15px;
+    border: 1px solid #ccc;
+}
+.edel-btn-back:hover {
+    background-color: #e0e0e0;
+}
+
+.edel-btn-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+.edel-btn-group .edel-btn {
+    width: auto;
+    flex: 1;
+    max-width: 250px;
+    padding: 12px 10px;
+    font-size: 15px;
+}
+.edel-btn-secondary {
+    background-color: #fff;
+    color: #555;
+    border: 1px solid #ccc;
+}
+.edel-btn-secondary:hover {
+    background-color: #f5f5f5;
+    color: #333;
+    border-color: #999;
+}
+.edel-btn-small {
+    font-size: 0.85em;
+    padding: 5px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #666;
+    background: #fff;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.edel-btn-small:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* Step 2: 時間枠グリッド */
+.edel-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 30px;
+}
+.edel-time-slot {
+    padding: 12px 5px;
+    background-color: #fff !important;
+    color: #333 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    font-family: inherit;
+}
+.edel-time-slot:hover {
+    background-color: #333 !important;
+    color: #fff !important;
+    border-color: #333 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Step 3: 確認ボックス */
+.edel-confirm-box {
+    background: #fcfcfc;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-left: 5px solid #333;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    border-left-width: 5px;
+}
+.edel-confirm-box p {
+    margin: 0 0 12px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+}
+.edel-confirm-box p:last-child {
+    margin-bottom: 0;
+}
+.edel-confirm-box strong {
+    display: inline-block;
+    min-width: 80px;
+    color: #555;
+}
+.edel-register-check {
+    background: #f0f8ff;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #d0e8ff;
+}
+
+/* カレンダーオーバーレイ */
+#edel-front-calendar-wrapper {
+    position: relative;
+    min-height: 400px;
+}
+#edel-calendar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: #666;
+    backdrop-filter: blur(2px);
+    font-size: 1.1em;
+}
+
+/* ユーティリティ */
+.edel-loading,
+.edel-error,
+.edel-no-data {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+    font-style: italic;
+}
+.edel-error {
+    color: #d63638;
+    background: #fbeaea;
+    border-radius: 4px;
+    font-style: normal;
+}
+.edel-no-data {
+    background: #f9f9f9;
+    border-radius: 8px;
+    font-style: normal;
+}
+
+/* マイページ */
+.edel-mypage-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+.edel-mypage-container h2 {
+    color: #333;
+    font-weight: 600;
+}
+.edel-my-tabs {
+    display: flex;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 35px;
+    justify-content: center;
+}
+.edel-my-tab {
+    padding: 15px 30px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #888;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.3s ease;
+    font-size: 1.1em;
+}
+.edel-my-tab:hover {
+    color: #555;
+}
+.edel-my-tab.active {
+    color: #333;
+    border-bottom: 3px solid #333;
+}
+
+/* 予約カード */
+.edel-booking-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-left: 6px solid #444;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.edel-booking-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+.edel-booking-card.past {
+    background: #fcfcfc;
+    border-left-color: #bbb;
+    color: #777;
+    box-shadow: none;
+    border: 1px solid #eee;
+}
+.edel-booking-card.cancelled {
+    background: #fffafa;
+    border-left-color: #e74c3c;
+    opacity: 0.8;
+    color: #999;
+}
+.edel-booking-card.cancelled .edel-card-date {
+    text-decoration: line-through;
+    color: #999;
+}
+.edel-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f5f5f5;
+}
+.edel-card-date {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #222;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+.edel-card-status {
+    font-size: 0.85em;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #eee;
+    color: #666;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+.edel-booking-card.cancelled .edel-card-status {
+    background: #fbeaea;
+    color: #d63638;
+}
+.edel-card-body p {
+    margin: 10px 0;
+    font-size: 1.05em;
+    color: #444;
+    line-height: 1.6;
+    display: flex;
+}
+.edel-card-body strong {
+    color: #222;
+    min-width: 90px;
+    display: inline-block;
+    font-weight: 600;
+}
+.edel-card-actions {
+    margin-top: 25px;
+    text-align: right;
+    border-top: 1px solid #f9f9f9;
+    padding-top: 20px;
+}
+.edel-cancel-btn {
+    background: transparent;
+    color: #e74c3c;
+    border: 2px solid #e74c3c;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: all 0.2s;
+    font-weight: bold;
+    display: inline-block;
+    text-decoration: none;
+    font-family: inherit;
+}
+.edel-cancel-btn:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* ログインコンテナ */
+.edel-login-container {
+    max-width: 400px !important;
+    margin: 60px auto;
+    padding: 40px;
+}
+.edel-form-box {
+    background: #fcfcfc;
+    border: 1px solid #eee;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+.edel-form-box h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+/* --- モバイル対応修正 --- */
+@media screen and (max-width: 480px) {
+    /* 日付の文字サイズを小さくして改行を防ぐ */
+    #edel-booking-app .fc-daygrid-day-number {
+        font-size: 12px !important;
+        padding: 2px !important;
+    }
+
+    /* 曜日ヘッダーも小さく */
+    #edel-booking-app .fc-col-header-cell-cushion {
+        font-size: 12px !important;
+    }
+
+    /* カレンダーの高さをスマホ用に調整 */
+    #edel-booking-app .fc-daygrid-day-frame {
+        min-height: 70px !important;
+    }
+
+    /* 記号の位置を微調整 */
+    #edel-booking-app .edel-symbol-container {
+        margin-top: 10px !important; /* 日付との距離 */
+    }
+
+    /* ボタンを縦並びにする（必要であれば） */
+    .edel-btn-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .edel-btn-group .edel-btn {
+        width: 100%;
+        max-width: none;
+    }
+}
