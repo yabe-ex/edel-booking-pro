@@ -25,8 +25,8 @@ class EdelBookingProMyPage {
 
         $hide_service = isset($settings['hide_service']) ? (bool)$settings['hide_service'] : false;
         $hide_staff   = isset($settings['hide_staff']) ? (bool)$settings['hide_staff'] : false;
-        $label_service = !empty($settings['label_service']) ? $settings['label_service'] : 'メニュー';
-        $label_staff   = !empty($settings['label_staff']) ? $settings['label_staff'] : '担当スタッフ';
+        $label_service = !empty($settings['label_service']) ? $settings['label_service'] : __('Menu', 'edel-booking');
+        $label_staff   = !empty($settings['label_staff']) ? $settings['label_staff'] : __('Staff', 'edel-booking');
 
         $appointments = $wpdb->get_results($wpdb->prepare(
             "SELECT a.*, s.title as service_name
@@ -59,14 +59,14 @@ class EdelBookingProMyPage {
 ?>
         <div class="edel-mypage-container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2 style="margin:0;">マイページ</h2>
-                <a href="<?php echo wp_logout_url(get_permalink()); ?>" class="edel-btn-small">ログアウト</a>
+                <h2 style="margin:0;"><?php esc_html_e('My Page', 'edel-booking'); ?></h2>
+                <a href="<?php echo wp_logout_url(get_permalink()); ?>" class="edel-btn-small"><?php esc_html_e('Logout', 'edel-booking'); ?></a>
             </div>
 
             <div class="edel-my-tabs">
-                <div class="edel-my-tab active" onclick="switchTab('upcoming', this)">今後の予約</div>
-                <div class="edel-my-tab" onclick="switchTab('past', this)">履歴 / キャンセル</div>
-                <div class="edel-my-tab" onclick="switchTab('account', this)">アカウント設定</div>
+                <div class="edel-my-tab active" onclick="switchTab('upcoming', this)"><?php esc_html_e('Upcoming Bookings', 'edel-booking'); ?></div>
+                <div class="edel-my-tab" onclick="switchTab('past', this)"><?php esc_html_e('History / Cancelled', 'edel-booking'); ?></div>
+                <div class="edel-my-tab" onclick="switchTab('account', this)"><?php esc_html_e('Account Settings', 'edel-booking'); ?></div>
             </div>
 
             <div id="edel-tab-upcoming" class="edel-tab-content">
@@ -82,24 +82,24 @@ class EdelBookingProMyPage {
                         <div class="edel-booking-card">
                             <div class="edel-card-header">
                                 <div class="edel-card-date"><?php echo esc_html($date_str); ?></div>
-                                <span class="edel-card-status">予約確定</span>
+                                <span class="edel-card-status"><?php esc_html_e('Confirmed', 'edel-booking'); ?></span>
                             </div>
                             <div class="edel-card-body">
                                 <?php if (!$hide_service): ?><p><strong><?php echo esc_html($label_service); ?>:</strong> <?php echo esc_html($app->service_name); ?></p><?php endif; ?>
-                                <?php if (!$hide_staff): ?><p><strong><?php echo esc_html($label_staff); ?>:</strong> <?php echo esc_html($staff ? $staff->display_name : '不明'); ?></p><?php endif; ?>
-                                <?php if (!empty($app->note)): ?><p><strong>備考:</strong> <?php echo nl2br(esc_html($app->note)); ?></p><?php endif; ?>
+                                <?php if (!$hide_staff): ?><p><strong><?php echo esc_html($label_staff); ?>:</strong> <?php echo esc_html($staff ? $staff->display_name : __('Unknown', 'edel-booking')); ?></p><?php endif; ?>
+                                <?php if (!empty($app->note)): ?><p><strong><?php esc_html_e('Note:', 'edel-booking'); ?></strong> <?php echo nl2br(esc_html($app->note)); ?></p><?php endif; ?>
                             </div>
                             <div class="edel-card-actions">
                                 <?php if ($can_cancel): ?>
-                                    <button class="edel-cancel-btn" onclick="cancelBooking(<?php echo $app->id; ?>)">予約をキャンセルする</button>
+                                    <button class="edel-cancel-btn" onclick="cancelBooking(<?php echo $app->id; ?>)"><?php esc_html_e('Cancel Booking', 'edel-booking'); ?></button>
                                 <?php else: ?>
-                                    <span style="font-size:0.9em; color:#999;">キャンセル期限を過ぎています</span>
+                                    <span style="font-size:0.9em; color:#999;"><?php esc_html_e('Cancellation deadline passed', 'edel-booking'); ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <p class="edel-no-data">今後の予約はありません。</p>
+                    <p class="edel-no-data"><?php esc_html_e('No upcoming bookings.', 'edel-booking'); ?></p>
                 <?php endif; ?>
             </div>
 
@@ -108,7 +108,7 @@ class EdelBookingProMyPage {
                     <?php foreach ($past as $app):
                         $staff = get_userdata($app->staff_id);
                         $is_cancelled = ($app->status == 'cancelled');
-                        $status_label = $is_cancelled ? 'キャンセル済' : '来店済';
+                        $status_label = $is_cancelled ? __('Cancelled', 'edel-booking') : __('Completed', 'edel-booking');
                         $class_mod = $is_cancelled ? 'cancelled' : 'past';
 
                         $date_str = date('Y-m-d H:i', strtotime($app->start_datetime));
@@ -117,33 +117,33 @@ class EdelBookingProMyPage {
                         <div class="edel-booking-card <?php echo $class_mod; ?>">
                             <div class="edel-card-header">
                                 <div class="edel-card-date"><?php echo esc_html($date_str); ?></div>
-                                <span class="edel-card-status"><?php echo $status_label; ?></span>
+                                <span class="edel-card-status"><?php echo esc_html($status_label); ?></span>
                             </div>
                             <div class="edel-card-body">
                                 <?php if (!$hide_service): ?><p><strong><?php echo esc_html($label_service); ?>:</strong> <?php echo esc_html($app->service_name); ?></p><?php endif; ?>
-                                <?php if (!$hide_staff): ?><p><strong><?php echo esc_html($label_staff); ?>:</strong> <?php echo esc_html($staff ? $staff->display_name : '不明'); ?></p><?php endif; ?>
+                                <?php if (!$hide_staff): ?><p><strong><?php echo esc_html($label_staff); ?>:</strong> <?php echo esc_html($staff ? $staff->display_name : __('Unknown', 'edel-booking')); ?></p><?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <p class="edel-no-data">履歴はありません。</p>
+                    <p class="edel-no-data"><?php esc_html_e('No history found.', 'edel-booking'); ?></p>
                 <?php endif; ?>
             </div>
 
             <div id="edel-tab-account" class="edel-tab-content" style="display:none;">
                 <div class="edel-form-box">
-                    <h3>パスワード変更</h3>
-                    <p style="font-size:0.9em; margin-bottom:15px; color:#666;">新しいパスワードを入力してください。</p>
+                    <h3><?php esc_html_e('Change Password', 'edel-booking'); ?></h3>
+                    <p style="font-size:0.9em; margin-bottom:15px; color:#666;"><?php esc_html_e('Enter your new password.', 'edel-booking'); ?></p>
                     <form id="edel-change-password-form">
                         <div class="edel-form-group">
-                            <label>新しいパスワード</label>
+                            <label><?php esc_html_e('New Password', 'edel-booking'); ?></label>
                             <input type="password" name="new_pass" class="edel-input" required>
                         </div>
                         <div class="edel-form-group">
-                            <label>新しいパスワード (確認)</label>
+                            <label><?php esc_html_e('New Password (Confirm)', 'edel-booking'); ?></label>
                             <input type="password" name="confirm_pass" class="edel-input" required>
                         </div>
-                        <button type="submit" class="edel-btn edel-btn-primary">パスワードを変更する</button>
+                        <button type="submit" class="edel-btn edel-btn-primary"><?php esc_html_e('Update Password', 'edel-booking'); ?></button>
                     </form>
                 </div>
             </div>
@@ -166,7 +166,7 @@ class EdelBookingProMyPage {
             }
 
             function cancelBooking(bookingId) {
-                if (!confirm('本当にこの予約をキャンセルしますか？')) return;
+                if (!confirm('<?php echo esc_js(__('Are you sure you want to cancel this booking?', 'edel-booking')); ?>')) return;
                 jQuery.ajax({
                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
                     type: 'POST',
@@ -189,7 +189,7 @@ class EdelBookingProMyPage {
             jQuery('#edel-change-password-form').on('submit', function(e) {
                 e.preventDefault();
                 var btn = jQuery(this).find('button');
-                btn.prop('disabled', true).text('更新中...');
+                btn.prop('disabled', true).text('<?php echo esc_js(__('Updating...', 'edel-booking')); ?>');
 
                 jQuery.ajax({
                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
@@ -202,11 +202,11 @@ class EdelBookingProMyPage {
                         } else {
                             alert(res.data);
                         }
-                        btn.prop('disabled', false).text('パスワードを変更する');
+                        btn.prop('disabled', false).text('<?php echo esc_js(__('Update Password', 'edel-booking')); ?>');
                     },
                     error: function() {
-                        alert('通信エラー');
-                        btn.prop('disabled', false).text('パスワードを変更する');
+                        alert('<?php echo esc_js(__('Communication Error', 'edel-booking')); ?>');
+                        btn.prop('disabled', false).text('<?php echo esc_js(__('Update Password', 'edel-booking')); ?>');
                     }
                 });
             });
@@ -219,37 +219,37 @@ class EdelBookingProMyPage {
         ob_start();
     ?>
         <div class="edel-mypage-container edel-login-container">
-            <h2 style="text-align:center; margin-bottom:30px;">ログイン</h2>
+            <h2 style="text-align:center; margin-bottom:30px;"><?php esc_html_e('Login', 'edel-booking'); ?></h2>
 
             <div id="edel-login-view">
                 <form id="edel-login-form">
                     <div class="edel-form-group">
-                        <label>メールアドレス</label>
+                        <label><?php esc_html_e('Email', 'edel-booking'); ?></label>
                         <input type="email" name="email" class="edel-input" required>
                     </div>
                     <div class="edel-form-group">
-                        <label>パスワード</label>
+                        <label><?php esc_html_e('Password', 'edel-booking'); ?></label>
                         <input type="password" name="password" class="edel-input" required>
                     </div>
-                    <button type="submit" class="edel-btn edel-btn-primary">ログイン</button>
+                    <button type="submit" class="edel-btn edel-btn-primary"><?php esc_html_e('Login', 'edel-booking'); ?></button>
 
                     <div style="margin-top:20px; text-align:center;">
-                        <a href="#" onclick="showLostPassword(event)" style="color:#666; font-size:0.9em;">パスワードをお忘れですか？</a>
+                        <a href="#" onclick="showLostPassword(event)" style="color:#666; font-size:0.9em;"><?php esc_html_e('Forgot Password?', 'edel-booking'); ?></a>
                     </div>
                 </form>
             </div>
 
             <div id="edel-lost-password-view" style="display:none;">
-                <p style="font-size:0.95em; color:#555;">登録したメールアドレスを入力してください。<br>パスワード再設定用のメールをお送りします。</p>
+                <p style="font-size:0.95em; color:#555;"><?php esc_html_e('Enter your email address. We will send you a link to reset your password.', 'edel-booking'); ?></p>
                 <form id="edel-lost-password-form">
                     <div class="edel-form-group">
-                        <label>メールアドレス</label>
+                        <label><?php esc_html_e('Email', 'edel-booking'); ?></label>
                         <input type="email" name="email" class="edel-input" required>
                     </div>
-                    <button type="submit" class="edel-btn edel-btn-secondary">再設定メールを送信</button>
+                    <button type="submit" class="edel-btn edel-btn-secondary"><?php esc_html_e('Send Reset Link', 'edel-booking'); ?></button>
 
                     <div style="margin-top:20px; text-align:center;">
-                        <a href="#" onclick="showLogin(event)" style="color:#666; font-size:0.9em;">ログイン画面に戻る</a>
+                        <a href="#" onclick="showLogin(event)" style="color:#666; font-size:0.9em;"><?php esc_html_e('Back to Login', 'edel-booking'); ?></a>
                     </div>
                 </form>
             </div>
@@ -273,7 +273,7 @@ class EdelBookingProMyPage {
             jQuery('#edel-login-form').on('submit', function(e) {
                 e.preventDefault();
                 var btn = jQuery(this).find('button');
-                btn.prop('disabled', true).text('認証中...');
+                btn.prop('disabled', true).text('<?php echo esc_js(__('Authenticating...', 'edel-booking')); ?>');
 
                 jQuery.ajax({
                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
@@ -284,12 +284,12 @@ class EdelBookingProMyPage {
                             location.reload();
                         } else {
                             alert(res.data);
-                            btn.prop('disabled', false).text('ログイン');
+                            btn.prop('disabled', false).text('<?php echo esc_js(__('Login', 'edel-booking')); ?>');
                         }
                     },
                     error: function() {
-                        alert('通信エラー');
-                        btn.prop('disabled', false).text('ログイン');
+                        alert('<?php echo esc_js(__('Communication Error', 'edel-booking')); ?>');
+                        btn.prop('disabled', false).text('<?php echo esc_js(__('Login', 'edel-booking')); ?>');
                     }
                 });
             });
@@ -297,7 +297,7 @@ class EdelBookingProMyPage {
             jQuery('#edel-lost-password-form').on('submit', function(e) {
                 e.preventDefault();
                 var btn = jQuery(this).find('button');
-                btn.prop('disabled', true).text('送信中...');
+                btn.prop('disabled', true).text('<?php echo esc_js(__('Sending...', 'edel-booking')); ?>');
 
                 jQuery.ajax({
                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
@@ -309,7 +309,7 @@ class EdelBookingProMyPage {
                             jQuery('#edel-lost-password-form')[0].reset();
                             showLogin(e);
                         }
-                        btn.prop('disabled', false).text('再設定メールを送信');
+                        btn.prop('disabled', false).text('<?php echo esc_js(__('Send Reset Link', 'edel-booking')); ?>');
                     }
                 });
             });

@@ -3,13 +3,9 @@
 class EdelBookingProAdminList {
 
     public function __construct() {
-        // CSV出力はヘッダー送信が必要なため、admin_init で処理をフックします
         add_action('admin_init', array($this, 'process_export'));
     }
 
-    /**
-     * CSVエクスポート処理
-     */
     public function process_export() {
         if (!isset($_POST['edel_action']) || $_POST['edel_action'] !== 'export_csv') {
             return;
@@ -23,34 +19,38 @@ class EdelBookingProAdminList {
 
         $target_month = isset($_POST['target_month']) ? sanitize_text_field($_POST['target_month']) : date('Y-m');
 
-        // データ取得
         $appointments = $this->get_appointments_by_month($target_month);
 
-        // ファイル名
         $filename = 'booking_list_' . $target_month . '.csv';
 
-        // ヘッダー設定
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Pragma: no-cache');
         header('Expires: 0');
 
         $fp = fopen('php://output', 'w');
-
-        // BOM (Excelでの文字化け防止)
         fwrite($fp, "\xEF\xBB\xBF");
 
-        // CSVヘッダー
-        $header = array('予約ID', '来店日', '来店時間', 'メニュー', '料金', '担当スタッフ', '顧客名', 'メールアドレス', '電話番号', 'ステータス', '管理メモ', '予約ハッシュ');
+        // ヘッダー翻訳
+        $header = array(
+            __('Booking ID', 'edel-booking'),
+            __('Date', 'edel-booking'),
+            __('Time', 'edel-booking'),
+            __('Service', 'edel-booking'),
+            __('Price', 'edel-booking'),
+            __('Staff', 'edel-booking'),
+            __('Customer Name', 'edel-booking'),
+            __('Email', 'edel-booking'),
+            __('Phone', 'edel-booking'),
+            __('Status', 'edel-booking'),
+            __('Admin Note', 'edel-booking'),
+            __('Booking Hash', 'edel-booking')
+        );
         fputcsv($fp, $header);
 
         foreach ($appointments as $app) {
             $staff = get_userdata($app->staff_id);
-
-            // 料金計算
             $price = $this->calculate_price($app->service_id, $app->staff_id);
-
-            // ステータス表記
             $status_label = $this->get_status_label($app->status);
 
             $row = array(
@@ -59,12 +59,12 @@ class EdelBookingProAdminList {
                 date('H:i', strtotime($app->start_datetime)),
                 $app->service_title,
                 $price,
-                $staff ? $staff->display_name : '不明',
+                $staff ? $staff->display_name : __('Unknown', 'edel-booking'),
                 $app->customer_name,
                 $app->customer_email,
                 $app->customer_phone,
                 $status_label,
-                $app->note, // お客様備考
+                $app->note,
                 $app->booking_hash
             );
             fputcsv($fp, $row);
@@ -74,13 +74,9 @@ class EdelBookingProAdminList {
         exit;
     }
 
-    /**
-     * 管理画面描画
-     */
     public function render() {
         $target_month = isset($_GET['month']) ? sanitize_text_field($_GET['month']) : date('Y-m');
 
-        // フォーム送信後のリロード対応
         if (isset($_POST['target_month']) && !isset($_POST['edel_action'])) {
             $target_month = sanitize_text_field($_POST['target_month']);
         }
@@ -88,7 +84,7 @@ class EdelBookingProAdminList {
         $appointments = $this->get_appointments_by_month($target_month);
 ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">予約リスト</h1>
+            <h1 class="wp-heading-inline"><?php esc_html_e('Booking List', 'edel-booking'); ?></h1>
             <hr class="wp-header-end">
 
             <div class="tablenav top">
@@ -96,7 +92,7 @@ class EdelBookingProAdminList {
                     <input type="hidden" name="page" value="edel-booking-pro-list">
                     <div class="alignleft actions">
                         <input type="month" name="month" value="<?php echo esc_attr($target_month); ?>">
-                        <input type="submit" class="button" value="表示">
+                        <input type="submit" class="button" value="<?php esc_attr_e('Show', 'edel-booking'); ?>">
                     </div>
                 </form>
 
@@ -104,7 +100,7 @@ class EdelBookingProAdminList {
                     <?php wp_nonce_field('edel_export_csv_nonce'); ?>
                     <input type="hidden" name="edel_action" value="export_csv">
                     <input type="hidden" name="target_month" value="<?php echo esc_attr($target_month); ?>">
-                    <input type="submit" class="button button-primary" value="CSVダウンロード">
+                    <input type="submit" class="button button-primary" value="<?php esc_attr_e('Download CSV', 'edel-booking'); ?>">
                 </form>
                 <div style="clear:both;"></div>
             </div>
@@ -113,13 +109,13 @@ class EdelBookingProAdminList {
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>日時</th>
-                        <th>メニュー</th>
-                        <th>料金 (概算)</th>
-                        <th>担当スタッフ</th>
-                        <th>顧客情報</th>
-                        <th>ステータス</th>
-                        <th>備考</th>
+                        <th><?php esc_html_e('Date/Time', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Service', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Price (Est.)', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Staff', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Customer Info', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Status', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Note', 'edel-booking'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,19 +136,19 @@ class EdelBookingProAdminList {
                                 </td>
                                 <td><?php echo esc_html($app->service_title); ?></td>
                                 <td>¥<?php echo number_format($price); ?></td>
-                                <td><?php echo esc_html($staff ? $staff->display_name : '不明'); ?></td>
+                                <td><?php echo esc_html($staff ? $staff->display_name : __('Unknown', 'edel-booking')); ?></td>
                                 <td>
                                     <?php echo esc_html($app->customer_name); ?><br>
                                     <span style="font-size:11px; color:#666;"><?php echo esc_html($app->customer_email); ?></span><br>
                                     <span style="font-size:11px; color:#666;"><?php echo esc_html($app->customer_phone); ?></span>
                                 </td>
-                                <td style="<?php echo $status_style; ?>"><?php echo $status_label; ?></td>
+                                <td style="<?php echo $status_style; ?>"><?php echo esc_html($status_label); ?></td>
                                 <td><?php echo nl2br(esc_html($app->note)); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8">予約データがありません。</td>
+                            <td colspan="8"><?php esc_html_e('No bookings found.', 'edel-booking'); ?></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -161,9 +157,6 @@ class EdelBookingProAdminList {
 <?php
     }
 
-    /**
-     * データ取得ヘルパー
-     */
     private function get_appointments_by_month($month_str) {
         global $wpdb;
         $table_appt = $wpdb->prefix . 'edel_booking_appointments';
@@ -183,13 +176,9 @@ class EdelBookingProAdminList {
         ));
     }
 
-    /**
-     * 料金計算ヘルパー (フロントと同じロジック)
-     */
     private function calculate_price($service_id, $staff_id) {
         global $wpdb;
 
-        // カスタム料金チェック
         $custom = $wpdb->get_var($wpdb->prepare(
             "SELECT custom_price FROM {$wpdb->prefix}edel_booking_service_staff WHERE service_id = %d AND staff_id = %d",
             $service_id,
@@ -200,7 +189,6 @@ class EdelBookingProAdminList {
             return (int)$custom;
         }
 
-        // 基本料金
         $base = $wpdb->get_var($wpdb->prepare(
             "SELECT price FROM {$wpdb->prefix}edel_booking_services WHERE id = %d",
             $service_id
@@ -212,13 +200,13 @@ class EdelBookingProAdminList {
     private function get_status_label($status) {
         switch ($status) {
             case 'confirmed':
-                return '確定';
+                return __('Confirmed', 'edel-booking');
             case 'pending':
-                return '仮予約';
+                return __('Pending', 'edel-booking');
             case 'cancelled':
-                return 'キャンセル';
+                return __('Cancelled', 'edel-booking');
             case 'completed':
-                return '来店済';
+                return __('Completed', 'edel-booking');
             default:
                 return $status;
         }

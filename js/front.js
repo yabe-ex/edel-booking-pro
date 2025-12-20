@@ -2,10 +2,13 @@ jQuery(document).ready(function ($) {
     var calendarEl = document.getElementById('edel-front-calendar');
     var calendar;
 
+    // 翻訳データの取得
+    var l10n = edel_front.l10n || {};
+
     if (calendarEl) {
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            locale: 'ja',
+            locale: l10n.locale_code || 'ja',
             headerToolbar: { left: 'prev', center: 'title', right: 'next' },
             height: 'auto',
             selectable: false,
@@ -39,16 +42,13 @@ jQuery(document).ready(function ($) {
             eventContent: function (arg) {
                 var props = arg.event.extendedProps;
 
-                // ★修正: 休業日なら何も表示しない (背景のみ)
                 if (props.is_closed) {
                     return { domNodes: [] };
                 }
 
                 var container = document.createElement('div');
 
-                // ★修正: モードによる分岐
                 if (edel_front.calendar_mode === 'symbol') {
-                    // 記号モード
                     container.className = 'edel-symbol-container';
                     var symbolClass = '';
                     var symbolChar = props.symbol || '×';
@@ -60,7 +60,6 @@ jQuery(document).ready(function ($) {
 
                     container.innerHTML = '<span class="edel-mark ' + symbolClass + '">' + symbolChar + '</span>';
                 } else {
-                    // バー表示モード (デフォルト)
                     container.className = 'edel-day-bars';
                     var amBar = document.createElement('div');
                     amBar.className = 'edel-bar edel-bar-am';
@@ -76,7 +75,6 @@ jQuery(document).ready(function ($) {
             },
 
             dateClick: function (info) {
-                // クラス名で休業日を判定 (JS側でイベントデータを見る方法もあるが、ここではDOM依存を避けるためデータ走査)
                 var events = calendar.getEvents();
                 var clickedDate = info.dateStr;
                 var isOpen = false;
@@ -94,7 +92,6 @@ jQuery(document).ready(function ($) {
                 }
 
                 if (isClosedDay) {
-                    // 何もしない (または休業アラート)
                     return;
                 }
 
@@ -102,14 +99,13 @@ jQuery(document).ready(function ($) {
                     $('#edel-front-date').val(clickedDate);
                     goToStep2(clickedDate);
                 } else {
-                    alert('申し訳ありません。その日は空きがありません。');
+                    alert(l10n.full_day || 'Sorry, fully booked.');
                 }
             }
         });
         calendar.render();
     }
 
-    // ... (以下、前回と同様の連携ロジックなど) ...
     var relations = edel_front.relations || {};
     var serviceToStaff = relations.service_to_staff || {};
     var staffToService = relations.staff_to_service || {};
@@ -176,7 +172,7 @@ jQuery(document).ready(function ($) {
         $('#edel-step-1').hide();
         $('#edel-step-2').fadeIn();
         $('#edel-display-date').text(date);
-        $('#edel-slots-container').html('<p class="edel-loading">空き時間を取得中...</p>');
+        $('#edel-slots-container').html('<p class="edel-loading">' + (l10n.loading_slots || 'Loading...') + '</p>');
         var targetOffset = $('#edel-booking-app').offset().top - 50;
         $('html, body').animate({ scrollTop: targetOffset }, 400);
 
@@ -186,10 +182,10 @@ jQuery(document).ready(function ($) {
             data: { action: 'edel_get_available_slots', nonce: edel_front.nonce, service_id: service, staff_id: staff, date: date },
             success: function (response) {
                 if (response.success) renderSlots(response.data);
-                else $('#edel-slots-container').html('<p class="edel-error">エラー: ' + response.data + '</p>');
+                else $('#edel-slots-container').html('<p class="edel-error">Error: ' + response.data + '</p>');
             },
             error: function () {
-                $('#edel-slots-container').html('<p class="edel-error">通信エラーが発生しました。</p>');
+                $('#edel-slots-container').html('<p class="edel-error">' + (l10n.error_fetch || 'Error') + '</p>');
             }
         });
     }
@@ -198,7 +194,7 @@ jQuery(document).ready(function ($) {
         var container = $('#edel-slots-container');
         container.empty();
         if (slots.length === 0) {
-            container.html('<p>申し訳ありません。この日は予約枠が空いていません。</p>');
+            container.html('<p>' + (l10n.no_slots || 'No slots available.') + '</p>');
             return;
         }
         var html = '<div class="edel-slots-grid">';
@@ -277,9 +273,9 @@ jQuery(document).ready(function ($) {
 
     $('#edel-front-booking-form').on('submit', function (e) {
         e.preventDefault();
-        if (!confirm('この内容で予約を確定してもよろしいですか？')) return;
+        if (!confirm(l10n.confirm_booking || 'Confirm?')) return;
         var submitBtn = $('#edel-btn-submit');
-        submitBtn.prop('disabled', true).text('処理中...');
+        submitBtn.prop('disabled', true).text(l10n.processing || 'Processing...');
         var formData = $(this).serializeArray();
         formData.push({ name: 'action', value: 'edel_submit_booking_front' });
         formData.push({ name: 'nonce', value: edel_front.nonce });
@@ -295,13 +291,13 @@ jQuery(document).ready(function ($) {
                     $('#edel-step-3').hide();
                     $('#edel-step-4').fadeIn();
                 } else {
-                    alert('エラー: ' + response.data);
-                    submitBtn.prop('disabled', false).text('予約を確定する');
+                    alert('Error: ' + response.data);
+                    submitBtn.prop('disabled', false).text(l10n.btn_confirm || 'Confirm');
                 }
             },
             error: function () {
-                alert('通信エラー');
-                submitBtn.prop('disabled', false).text('予約を確定する');
+                alert(l10n.error_fetch || 'Communication Error');
+                submitBtn.prop('disabled', false).text(l10n.btn_confirm || 'Confirm');
             }
         });
     });

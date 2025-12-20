@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Edel Booking Pro\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-12-20 01:44+0000\n"
-"PO-Revision-Date: 2025-12-20 01:53+0000\n"
+"PO-Revision-Date: 2025-12-20 02:02+0000\n"
 "Last-Translator: \n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -522,7 +522,7 @@ msgstr "所要時間 (分)"
 
 #. Name of the plugin
 msgid "Edel Booking Pro"
-msgstr ""
+msgstr "Edel Booking Pro"
 
 #: inc/class-admin-settings.php:65
 msgid "Edel Booking Pro Settings"
@@ -530,7 +530,7 @@ msgstr "Edel Booking Pro 設定"
 
 #. Author of the plugin
 msgid "Edel Hearts"
-msgstr ""
+msgstr "Edel Hearts"
 
 #: inc/class-admin-services.php:97 inc/class-admin.php:345
 msgid "Edit"
@@ -1060,6 +1060,10 @@ msgstr "料金表示"
 msgid "Price:"
 msgstr "料金:"
 
+#. Description of the plugin
+msgid "Pro version of reservation management system for stores."
+msgstr "店舗向け予約管理システムのPro版です。"
+
 #: inc/class-front.php:81
 msgid "Processing..."
 msgstr "処理中..."
@@ -1188,4 +1192,360 @@ msgstr "差出人名"
 msgid "Sending..."
 msgstr "送信中..."
 
-#: inc/class-admin-menu.php:182 inc/class-admin-menu.php:2
+#: inc/class-admin-menu.php:182 inc/class-admin-menu.php:292
+#: inc/class-admin-list.php:39 inc/class-admin-list.php:113
+#: inc/class-admin-calendar.php:51
+msgid "Service"
+msgstr "メニュー"
+
+#: inc/class-admin-services.php:72 inc/class-admin.php:281
+msgid "Service Management"
+msgstr "メニュー管理"
+
+#: inc/class-admin-services.php:79 inc/class-admin-services.php:130
+#: inc/class-admin.php:206 inc/class-admin.php:291 inc/class-admin.php:327
+msgid "Service Name"
+msgstr "メニュー名"
+
+#: inc/class-admin-menu.php:45 inc/class-admin-menu.php:46
+msgid "Services"
+msgstr "メニュー管理"
+
+#: inc/class-admin.php:419
+msgid "Set as Day Off"
+msgstr "この日は休みにする"
+
+#: inc/class-admin-staff.php:317
+msgid "Set the date and click 'Save' to add to the list below."
+msgstr "日付を指定して「保存する」を押すと、下のリストに追加されます。"
+
+#: inc/class-admin.php:10 inc/class-admin.php:130 inc/class-admin-menu.php:65
+#: inc/class-admin-menu.php:66 inc/class-admin-staff.php:327
+msgid "Settings"
+msgstr "設定"
+
+#: inc/class-admin-settings.php:14 inc/class-admin-staff.php:97
+msgid "Settings saved."
+msgstr "設定を保存しました。"
+
+#: inc/class-admin.php:156
+#, php-format
+msgid "Settings: %s"
+msgstr "設定: %s"
+
+#: inc/class-admin-settings.php:80
+msgid "Shop Name / Signature"
+msgstr "店舗名 / 署名"
+
+#: inc/class-admin-list.php:95
+msgid "Show"
+msgstr "表示"
+
+#: inc/class-admin.php:441
+msgid "Show All"
+msgstr "全員を表示"
+
+#: inc/class-admin-menu.php:138
+msgid "Show All Bookings"
+msgstr "すべての予約を表示"
+
+#: inc/class-admin-settings.php:159
+msgid "Show price"
+msgstr "料金を表示する"
+
+#: inc/class-admin-settings.php:355
+msgid "Single line text"
+msgstr "1行テキスト"
+
+#: inc/class-front.php:83
+msgid "Sorry, fully booked."
+msgstr "申し訳ありません。その日は空きがありません。"
+
+#: inc/class-front.php:78
+msgid "Sorry, no slots available on this date."
+msgstr "申し訳ありません。この日は予約枠が空いていません。"
+
+#: inc/class-ajax.php:331
+msgid "Sorry, this slot has been taken."
+msgstr "申し訳ありません。タッチの差でその時間は埋まってしまいました。"
+
+#: inc/class-front.php:126 inc/class-admin.php:456
+#: inc/class-admin-settings.php:36 inc/class-admin-menu.php:183
+#: inc/class-admin-menu.php:293 inc/class-admin-customers.php:211
+#: inc/class-admin-list.php:41 inc/class-admin-list.php:115
+#: inc/class-admin-calendar.php:41 inc/class-mypage.php:29
+msgid "Staff"
+msgstr "担当スタッフ"
+
+#: inc/class-admin.php:85 inc/class-admin-menu.php:37
+#: inc/class-admin-menu.php:38 inc/class-admin-staff.php:127
+msgid "Staff Management"
+msgstr "スタッフ管理"
+
+#: inc/class-admin-staff.php:232
+msgid "Staff Price (Override)"
+msgstr "このスタッフの料金 (上書き)"
+
+#: inc/class-admin-staff.php:200
+msgid "Staff Settings"
+msgstr "スタッフ設定"
+
+#: inc/class-admin.php:56
+msgid "Staff settings saved."
+msgstr "スタッフ設定を保存しました。"
+
+#: inc/class-admin-menu.php:136
+msgid "Staff:"
+msgstr "担当スタッフ:"
+
+#: inc/class-admin.php:167
+msgid "Start"
+msgstr "開始"
+
+#: inc/class-admin-menu.php:287
+msgid "Start Date/Time"
+msgstr "開始日時"
+
+#: inc/class-admin.php:423
+msgid "Start Time"
+msgstr "開始時間"
+
+#: inc/class-admin.php:331 inc/class-admin-menu.php:184
+#: inc/class-admin-menu.php:294 inc/class-admin-customers.php:212
+#: inc/class-admin-list.php:45 inc/class-admin-list.php:117
+msgid "Status"
+msgstr "ステータス"
+
+#: inc/class-admin-menu.php:95
+msgid "Status: "
+msgstr "ステータス: "
+
+#: inc/class-admin.php:181 inc/class-admin-settings.php:94
+#: inc/class-admin-staff.php:188
+msgid "Sun"
+msgstr "日"
+
+#: inc/class-admin-settings.php:150
+msgid "Symbols (◎ ○ △ ×)"
+msgstr "記号表示 (◎ ○ △ ×)"
+
+#: inc/class-admin-menu.php:133
+msgid "Target Month:"
+msgstr "表示月:"
+
+#: inc/class-admin.php:407
+msgid "Target Staff"
+msgstr "対象スタッフ"
+
+#: inc/class-admin-staff.php:206
+msgid "Target User"
+msgstr "対象ユーザー"
+
+#: inc/class-front.php:278
+msgid "Thank you for your booking. We have sent you a confirmation email."
+msgstr "ご予約ありがとうございます。確認メールをお送りしましたのでご確認ください。"
+
+#: inc/class-emails.php:178
+#, php-format
+msgid ""
+"The following booking was cancelled by user.\n"
+"\n"
+"Customer: %s\n"
+"Date: %s\n"
+"\n"
+"Please check admin panel."
+msgstr ""
+"以下の予約がユーザーによりキャンセルされました。\n"
+"\n"
+"顧客名: %s\n"
+"日時: %s\n"
+"\n"
+"管理画面で確認してください。"
+
+#: inc/class-admin-customers.php:196
+msgid "This note is not visible to the customer."
+msgstr "※このメモはお客様には公開されません。"
+
+#: inc/class-admin.php:178 inc/class-admin-settings.php:91
+#: inc/class-admin-staff.php:185
+msgid "Thu"
+msgstr "木"
+
+#: inc/class-admin.php:328 inc/class-admin-list.php:38
+msgid "Time"
+msgstr "時間"
+
+#: inc/class-admin-menu.php:97
+msgid "Today"
+msgstr "今日"
+
+#: inc/class-admin.php:176 inc/class-admin-settings.php:89
+#: inc/class-admin-staff.php:183
+msgid "Tue"
+msgstr "火"
+
+#: inc/class-admin-settings.php:353 inc/class-admin-customers.php:162
+msgid "Type"
+msgstr "区分"
+
+#: inc/class-admin-settings.php:127
+msgid "Uninstall Settings"
+msgstr "アンインストール設定"
+
+#: inc/class-ajax.php:79 inc/class-admin-customers.php:234
+#: inc/class-admin-list.php:62 inc/class-admin-list.php:139
+#: inc/class-mypage.php:89 inc/class-mypage.php:124
+msgid "Unknown"
+msgstr "不明"
+
+#: inc/class-admin-settings.php:106
+#, php-format
+msgid "Up to %s hours before booking"
+msgstr "予約の %s 時間前まで"
+
+#: inc/class-mypage.php:67
+msgid "Upcoming Bookings"
+msgstr "今後の予約"
+
+#: inc/class-admin.php:316
+msgid "Update"
+msgstr "更新"
+
+#: inc/class-mypage.php:146 inc/class-mypage.php:205 inc/class-mypage.php:209
+msgid "Update Password"
+msgstr "パスワードを変更する"
+
+#: inc/class-admin-services.php:38 inc/class-admin.php:262
+msgid "Updated."
+msgstr "更新しました。"
+
+#: inc/class-mypage.php:192
+msgid "Updating..."
+msgstr "更新中..."
+
+#: inc/class-ajax.php:403
+msgid "User not found."
+msgstr "ユーザーが見つかりません。"
+
+#: inc/class-admin-customers.php:71
+msgid "Visit Count"
+msgstr "来店回数"
+
+#: inc/class-admin-customers.php:204
+msgid "Visit History (Valid: %d)"
+msgstr "来店履歴 (有効来店数: %d回)"
+
+#: inc/class-admin-settings.php:134
+msgid "Warning:"
+msgstr "注意:"
+
+#: inc/class-admin.php:177 inc/class-admin-settings.php:90
+#: inc/class-admin-staff.php:184
+msgid "Wed"
+msgstr "水"
+
+#: inc/class-admin-menu.php:99
+msgid "Week"
+msgstr "週"
+
+#: inc/class-admin-staff.php:261
+msgid "Weekly Schedule (Base Shift)"
+msgstr "週間スケジュール (基本シフト)"
+
+#: inc/class-admin-services.php:139
+msgid "Yen"
+msgstr "円"
+
+#: inc/class-emails.php:98
+msgid "You have been registered as a member."
+msgstr "同時に会員登録を受け付けました。"
+
+#: inc/class-emails.php:170
+#, php-format
+msgid ""
+"Your cancellation has been processed.\n"
+"\n"
+"Date: %s\n"
+"We look forward to seeing you again.\n"
+"\n"
+"%s"
+msgstr ""
+"予約のキャンセルを承りました。\n"
+"\n"
+"日時: %s\n"
+"またのご利用をお待ちしております。\n"
+"\n"
+"%s"
+
+#: inc/class-emails.php:53
+msgid ""
+"{name}\n"
+"\n"
+"Thank you for your booking.\n"
+"Date: {date} {time}\n"
+"Menu: {service}\n"
+"Staff: {staff}\n"
+"\n"
+"{shop_name}"
+msgstr ""
+"{name} 様\n"
+"\n"
+"ご予約ありがとうございます。\n"
+"日時: {date} {time}\n"
+"メニュー: {service}\n"
+"担当: {staff}\n"
+"\n"
+"{shop_name}"
+
+#: inc/class-emails.php:139
+msgid ""
+"{name}\n"
+"\n"
+"Your appointment is tomorrow.\n"
+"Date: {date} {time}\n"
+"Menu: {service}\n"
+"Staff: {staff}\n"
+"\n"
+"{shop_name}"
+msgstr ""
+"{name} 様\n"
+"\n"
+"明日ご予約の日時です。\n"
+"日時: {date} {time}\n"
+"メニュー: {service}\n"
+"担当: {staff}\n"
+"\n"
+"{shop_name}"
+
+#: inc/class-emails.php:97
+msgid "■ Account Registration"
+msgstr "■ 会員登録のお知らせ"
+
+#: inc/class-emails.php:52
+#, php-format
+msgid "【%s】Booking Confirmation"
+msgstr "【%s】ご予約ありがとうございます"
+
+#: inc/class-emails.php:165
+#, php-format
+msgid "【%s】Cancellation Completed"
+msgstr "【%s】予約キャンセルの完了"
+
+#: inc/class-emails.php:138
+#, php-format
+msgid "【%s】Reservation Reminder"
+msgstr "【%s】ご予約の確認"
+
+#: inc/class-admin-menu.php:89
+msgid "【Booking Details】"
+msgstr "【予約詳細】"
+
+#: inc/class-emails.php:110
+#, php-format
+msgid "【Booking Notification】New booking from %s"
+msgstr "【予約通知】%s様より新規予約"
+
+#: inc/class-emails.php:177
+#, php-format
+msgid "【Cancellation】Booking ID: %s has been cancelled"
+msgstr "【キャンセル通知】予約ID:%s がキャンセルされました"

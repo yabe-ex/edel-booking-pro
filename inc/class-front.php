@@ -27,8 +27,21 @@ class EdelBookingProFront {
     function front_enqueue() {
         $version  = (defined('EDEL_BOOKING_PRO_DEVELOP') && true === EDEL_BOOKING_PRO_DEVELOP) ? time() : EDEL_BOOKING_PRO_VERSION;
 
-        wp_enqueue_script('edel-fullcalendar', 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js', array(), '6.1.8', true);
+        wp_enqueue_script(
+            'edel-fullcalendar',
+            EDEL_BOOKING_PRO_URL . '/assets/js/lib/fullcalendar/index.global.min.js',
+            array(),
+            '6.1.8',
+            true
+        );
 
+        wp_enqueue_script(
+            'edel-fullcalendar-locales',
+            EDEL_BOOKING_PRO_URL . '/assets/js/lib/fullcalendar/locales-all.global.min.js',
+            array('edel-fullcalendar'),
+            '6.1.8',
+            true
+        );
         wp_register_style(EDEL_BOOKING_PRO_SLUG . '-front',  EDEL_BOOKING_PRO_URL . '/css/front.css', array(), $version);
         wp_register_script(EDEL_BOOKING_PRO_SLUG . '-front', EDEL_BOOKING_PRO_URL . '/js/front.js', array('jquery', 'edel-fullcalendar'), $version, true);
 
@@ -71,6 +84,19 @@ class EdelBookingProFront {
             $map_staff_to_service[$uid][] = $sid;
         }
 
+        // JS用翻訳データ
+        $l10n = array(
+            'select_condition' => __('Please select conditions.', 'edel-booking'),
+            'loading_slots'    => __('Loading available slots...', 'edel-booking'),
+            'no_slots'         => __('Sorry, no slots available on this date.', 'edel-booking'),
+            'error_fetch'      => __('Communication Error.', 'edel-booking'),
+            'confirm_booking'  => __('Are you sure you want to confirm this booking?', 'edel-booking'),
+            'processing'       => __('Processing...', 'edel-booking'),
+            'btn_confirm'      => __('Confirm Booking', 'edel-booking'),
+            'full_day'         => __('Sorry, fully booked.', 'edel-booking'),
+            'locale_code'      => substr(get_locale(), 0, 2)
+        );
+
         $front_vars = array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce(EDEL_BOOKING_PRO_SLUG),
@@ -82,7 +108,8 @@ class EdelBookingProFront {
             'base_prices' => $service_prices,
             'durations'   => $service_durations,
             'custom_prices' => $staff_custom_prices,
-            'relations' => array('service_to_staff' => $map_service_to_staff, 'staff_to_service' => $map_staff_to_service)
+            'relations' => array('service_to_staff' => $map_service_to_staff, 'staff_to_service' => $map_staff_to_service),
+            'l10n' => $l10n
         );
 
         wp_enqueue_style(EDEL_BOOKING_PRO_SLUG . '-front');
@@ -108,8 +135,8 @@ class EdelBookingProFront {
         }
 
         $settings = get_option('edel_booking_settings', array());
-        $label_service = !empty($settings['label_service']) ? $settings['label_service'] : 'メニュー';
-        $label_staff   = !empty($settings['label_staff']) ? $settings['label_staff'] : '担当スタッフ';
+        $label_service = !empty($settings['label_service']) ? $settings['label_service'] : __('Menu', 'edel-booking');
+        $label_staff   = !empty($settings['label_staff']) ? $settings['label_staff'] : __('Staff', 'edel-booking');
         $hide_service = !empty($settings['hide_service']) ? true : false;
         $hide_staff   = !empty($settings['hide_staff']) ? true : false;
         $def_service = !empty($settings['default_service']) ? intval($settings['default_service']) : '';
@@ -129,48 +156,48 @@ class EdelBookingProFront {
 ?>
         <div id="edel-booking-app">
             <div class="edel-step" id="edel-step-1">
-                <h3>1. 予約条件を選択</h3>
+                <h3><?php esc_html_e('1. Select Conditions', 'edel-booking'); ?></h3>
                 <div class="edel-form-group" style="<?php echo $style_service_container; ?>">
                     <label><?php echo esc_html($label_service); ?></label>
                     <select id="edel-front-service" class="edel-select">
-                        <option value="">選択してください</option>
+                        <option value=""><?php esc_html_e('Please Select', 'edel-booking'); ?></option>
                         <?php foreach ($services as $s): ?>
-                            <option value="<?php echo $s->id; ?>" <?php selected($def_service, $s->id); ?>><?php echo esc_html($s->title); ?> (<?php echo $s->duration; ?>分)</option>
+                            <option value="<?php echo $s->id; ?>" <?php selected($def_service, $s->id); ?>><?php echo esc_html($s->title); ?> (<?php echo $s->duration; ?><?php esc_html_e('min', 'edel-booking'); ?>)</option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="edel-form-group" style="<?php echo $style_staff_container; ?>">
                     <label><?php echo esc_html($label_staff); ?></label>
                     <select id="edel-front-staff" class="edel-select">
-                        <option value="">選択してください</option>
+                        <option value=""><?php esc_html_e('Please Select', 'edel-booking'); ?></option>
                         <?php foreach ($staffs as $st): ?>
                             <option value="<?php echo $st->ID; ?>" <?php selected($def_staff, $st->ID); ?>><?php echo esc_html($st->display_name); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="edel-form-group">
-                    <label>来店日を選択</label>
+                    <label><?php esc_html_e('Select Date', 'edel-booking'); ?></label>
                     <div id="edel-front-calendar-wrapper">
                         <div id="edel-front-calendar"></div>
-                        <div id="edel-calendar-overlay">条件を選択してください</div>
+                        <div id="edel-calendar-overlay"><?php esc_html_e('Please select conditions first', 'edel-booking'); ?></div>
                     </div>
                     <input type="hidden" id="edel-front-date">
                 </div>
             </div>
 
             <div class="edel-step" id="edel-step-2" style="display:none;">
-                <h3>2. 時間を選択 (<span id="edel-display-date"></span>)</h3>
+                <h3><?php esc_html_e('2. Select Time', 'edel-booking'); ?> (<span id="edel-display-date"></span>)</h3>
                 <div id="edel-slots-container"></div>
-                <button class="edel-btn edel-btn-back" onclick="jQuery('#edel-step-2').hide(); jQuery('#edel-step-1').fadeIn();">カレンダーに戻る</button>
+                <button class="edel-btn edel-btn-back" onclick="jQuery('#edel-step-2').hide(); jQuery('#edel-step-1').fadeIn();"><?php esc_html_e('Back to Calendar', 'edel-booking'); ?></button>
             </div>
 
             <div class="edel-step" id="edel-step-3" style="display:none;">
-                <h3>3. お客様情報を入力</h3>
+                <h3><?php esc_html_e('3. Enter Information', 'edel-booking'); ?></h3>
                 <div class="edel-confirm-box">
-                    <p><strong>日時:</strong> <span id="edel-summary-date"></span> <span id="edel-summary-time"></span></p>
+                    <p><strong><?php esc_html_e('Date/Time:', 'edel-booking'); ?></strong> <span id="edel-summary-date"></span> <span id="edel-summary-time"></span></p>
                     <p id="edel-row-service"><strong><?php echo esc_html($label_service); ?>:</strong> <span id="edel-summary-service"></span></p>
                     <p id="edel-row-staff"><strong><?php echo esc_html($label_staff); ?>:</strong> <span id="edel-summary-staff"></span></p>
-                    <p id="edel-summary-price-row" style="<?php echo $display_style; ?>"><strong>料金:</strong> <span id="edel-summary-price"></span></p>
+                    <p id="edel-summary-price-row" style="<?php echo $display_style; ?>"><strong><?php esc_html_e('Price:', 'edel-booking'); ?></strong> <span id="edel-summary-price"></span></p>
                 </div>
                 <form id="edel-front-booking-form">
                     <input type="hidden" name="service_id" id="hidden-service-id">
@@ -178,15 +205,15 @@ class EdelBookingProFront {
                     <input type="hidden" name="date" id="hidden-date">
                     <input type="hidden" name="time" id="hidden-time">
                     <div class="edel-form-group">
-                        <label>お名前 <span class="required">*</span></label>
-                        <input type="text" name="customer_name" class="edel-input" required value="<?php echo esc_attr($current_user_name); ?>" placeholder="例: 山田 太郎">
+                        <label><?php esc_html_e('Name', 'edel-booking'); ?> <span class="required">*</span></label>
+                        <input type="text" name="customer_name" class="edel-input" required value="<?php echo esc_attr($current_user_name); ?>" placeholder="<?php esc_attr_e('Ex: Taro Yamada', 'edel-booking'); ?>">
                     </div>
                     <div class="edel-form-group">
-                        <label>メールアドレス <span class="required">*</span></label>
+                        <label><?php esc_html_e('Email', 'edel-booking'); ?> <span class="required">*</span></label>
                         <input type="email" name="customer_email" class="edel-input" required value="<?php echo esc_attr($current_user_email); ?>" placeholder="example@email.com">
                     </div>
                     <div class="edel-form-group">
-                        <label>電話番号</label>
+                        <label><?php esc_html_e('Phone', 'edel-booking'); ?></label>
                         <input type="tel" name="customer_phone" class="edel-input" placeholder="090-1234-5678">
                     </div>
 
@@ -201,7 +228,6 @@ class EdelBookingProFront {
                                 $options = array_map('trim', explode(',', $field['options']));
                             }
 
-                            // ★前回値の取得
                             $default_val = '';
                             if ($is_logged_in && !empty($field['save_default'])) {
                                 $default_val = get_user_meta($current_user_id, 'edel_cf_last_' . $index, true);
@@ -218,7 +244,7 @@ class EdelBookingProFront {
 
                                 <?php elseif ($type === 'select'): ?>
                                     <select name="edel_custom_fields[<?php echo $index; ?>]" class="edel-select" <?php echo $req; ?>>
-                                        <option value="">選択してください</option>
+                                        <option value=""><?php esc_html_e('Please Select', 'edel-booking'); ?></option>
                                         <?php foreach ($options as $opt): ?>
                                             <option value="<?php echo esc_attr($opt); ?>" <?php selected($default_val, $opt); ?>><?php echo esc_html($opt); ?></option>
                                         <?php endforeach; ?>
@@ -239,7 +265,7 @@ class EdelBookingProFront {
                     <?php endif; ?>
 
                     <div class="edel-form-group">
-                        <label>備考</label>
+                        <label><?php esc_html_e('Note', 'edel-booking'); ?></label>
                         <textarea name="note" class="edel-input" rows="3"></textarea>
                     </div>
 
@@ -247,31 +273,30 @@ class EdelBookingProFront {
                         <div class="edel-form-group edel-register-check">
                             <label style="font-weight:normal;">
                                 <input type="checkbox" name="create_account" value="1" checked>
-                                <strong>アカウントを作成して予約する（自動ログイン）</strong>
+                                <strong><?php esc_html_e('Create an account and book (Auto Login)', 'edel-booking'); ?></strong>
                             </label>
                             <p class="description" style="margin-top:5px; font-size:0.9em; color:#666;">
-                                ※登録すると、予約の確認やキャンセルがマイページから行えるようになります。
-                                パスワードはメールでお知らせします。
+                                <?php esc_html_e('If you register, you can check your booking or cancel from My Page. Password will be sent via email.', 'edel-booking'); ?>
                             </p>
                         </div>
                     <?php endif; ?>
 
-                    <button type="submit" id="edel-btn-submit" class="edel-btn edel-btn-primary">予約を確定する</button>
+                    <button type="submit" id="edel-btn-submit" class="edel-btn edel-btn-primary"><?php esc_html_e('Confirm Booking', 'edel-booking'); ?></button>
                 </form>
-                <button class="edel-btn edel-btn-back" onclick="jQuery('#edel-step-3').hide(); jQuery('#edel-step-2').fadeIn();">時間を選び直す</button>
+                <button class="edel-btn edel-btn-back" onclick="jQuery('#edel-step-3').hide(); jQuery('#edel-step-2').fadeIn();"><?php esc_html_e('Back to Time Selection', 'edel-booking'); ?></button>
             </div>
 
             <div class="edel-step" id="edel-step-4" style="display:none; text-align:center;">
-                <h3 style="color:#27ae60;">予約が確定しました</h3>
-                <p>ご予約ありがとうございます。<br>確認メールをお送りしましたのでご確認ください。</p>
+                <h3 style="color:#27ae60;"><?php esc_html_e('Booking Confirmed', 'edel-booking'); ?></h3>
+                <p><?php esc_html_e('Thank you for your booking. We have sent you a confirmation email.', 'edel-booking'); ?></p>
                 <br>
                 <div class="edel-btn-group">
-                    <a href="" class="edel-btn edel-btn-secondary">予約画面に戻る</a>
+                    <a href="" class="edel-btn edel-btn-secondary"><?php esc_html_e('Back to Booking Form', 'edel-booking'); ?></a>
 
                     <?php if ($is_logged_in): ?>
-                        <a href="<?php echo esc_url($mypage_url); ?>" class="edel-btn edel-btn-primary">マイページへ</a>
+                        <a href="<?php echo esc_url($mypage_url); ?>" class="edel-btn edel-btn-primary"><?php esc_html_e('Go to My Page', 'edel-booking'); ?></a>
                     <?php else: ?>
-                        <a href="<?php echo home_url(); ?>" id="edel-btn-home" class="edel-btn edel-btn-primary">トップページへ</a>
+                        <a href="<?php echo home_url(); ?>" id="edel-btn-home" class="edel-btn edel-btn-primary"><?php esc_html_e('Go to Top Page', 'edel-booking'); ?></a>
                     <?php endif; ?>
                 </div>
             </div>

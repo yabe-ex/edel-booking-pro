@@ -23,10 +23,13 @@ jQuery(document).ready(function ($) {
     var calendarEl = document.getElementById('edel-admin-calendar');
     var calendar;
 
+    // 翻訳データの取得
+    var l10n = edel_admin.l10n || {};
+
     if (calendarEl) {
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            locale: 'ja',
+            locale: l10n.locale_code || 'ja',
             height: 'auto',
             headerToolbar: {
                 left: 'prev,next today',
@@ -34,11 +37,11 @@ jQuery(document).ready(function ($) {
                 right: 'dayGridMonth,timeGridWeek,listMonth'
             },
             buttonText: {
-                today: '今日',
-                month: '月',
-                week: '週',
-                day: '日',
-                list: 'リスト'
+                today: l10n.button_today || '今日',
+                month: l10n.button_month || '月',
+                week: l10n.button_week || '週',
+                day: l10n.button_day || '日',
+                list: l10n.button_list || 'リスト'
             },
             navLinks: true,
             editable: false,
@@ -50,10 +53,10 @@ jQuery(document).ready(function ($) {
                 extraParams: {
                     action: 'edel_fetch_events',
                     nonce: edel_admin.nonce,
-                    staff_id: edel_admin.staff_id // ★修正: スタッフIDを渡す
+                    staff_id: edel_admin.staff_id
                 },
                 failure: function () {
-                    alert('予約データの取得に失敗しました。');
+                    alert(l10n.error_fetch || 'Failed to fetch bookings.');
                 }
             },
 
@@ -65,15 +68,15 @@ jQuery(document).ready(function ($) {
                 }
 
                 var props = info.event.extendedProps;
-                var msg = '【予約詳細】\n\n';
-                msg += '日時: ' + info.event.start.toLocaleString() + '\n';
+                var msg = (l10n.detail_title || '【Details】') + '\n\n';
+                msg += (l10n.date || 'Date: ') + info.event.start.toLocaleString() + '\n';
                 if (info.event.end) {
-                    msg += '終了: ' + info.event.end.toLocaleString() + '\n';
+                    msg += (l10n.end || 'End: ') + info.event.end.toLocaleString() + '\n';
                 }
-                msg += '内容: ' + info.event.title + '\n';
-                msg += 'メール: ' + (props.email || '-') + '\n';
-                msg += '電話: ' + (props.phone || '-') + '\n';
-                msg += 'ステータス: ' + (props.status || '-');
+                msg += (l10n.content || 'Content: ') + info.event.title + '\n';
+                msg += (l10n.email || 'Email: ') + (props.email || '-') + '\n';
+                msg += (l10n.phone || 'Phone: ') + (props.phone || '-') + '\n';
+                msg += (l10n.status || 'Status: ') + (props.status || '-');
 
                 alert(msg);
             }

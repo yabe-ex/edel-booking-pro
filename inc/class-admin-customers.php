@@ -14,17 +14,15 @@ class EdelBookingProAdminCustomers {
 
         if (!$email) return;
 
-        // WordPressユーザーかチェック
         $user = get_user_by('email', $email);
         if ($user) {
             update_user_meta($user->ID, 'edel_admin_note', $note);
         } else {
-            // ゲストの場合はオプションテーブルに保存 (キー: edel_guest_note_{MD5ハッシュ})
             $key = 'edel_guest_note_' . md5($email);
             update_option($key, $note);
         }
 
-        $redirect_url = admin_url('admin.php?page=edel-booking-pro-customers&action=view&email=' . urlencode($email) . '&msg=' . urlencode('メモを保存しました。'));
+        $redirect_url = admin_url('admin.php?page=edel-booking-pro-customers&action=view&email=' . urlencode($email) . '&msg=' . urlencode(__('Note saved.', 'edel-booking')));
         wp_redirect($redirect_url);
         exit;
     }
@@ -44,14 +42,10 @@ class EdelBookingProAdminCustomers {
         }
     }
 
-    /**
-     * 顧客一覧表示
-     */
     private function render_list() {
         global $wpdb;
         $table = $wpdb->prefix . 'edel_booking_appointments';
 
-        // キャンセル以外のステータスをカウントする
         $sql = "SELECT
                     customer_email,
                     MAX(customer_name) as display_name,
@@ -65,18 +59,18 @@ class EdelBookingProAdminCustomers {
         $customers = $wpdb->get_results($sql);
 ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">顧客管理</h1>
+            <h1 class="wp-heading-inline"><?php esc_html_e('Customer Management', 'edel-booking'); ?></h1>
             <hr class="wp-header-end">
 
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <th>氏名</th>
-                        <th>メールアドレス</th>
-                        <th>電話番号</th>
-                        <th>来店回数</th>
-                        <th>最終来店日</th>
-                        <th>操作</th>
+                        <th><?php esc_html_e('Name', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Email', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Phone', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Visit Count', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Last Visit', 'edel-booking'); ?></th>
+                        <th><?php esc_html_e('Actions', 'edel-booking'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,7 +80,7 @@ class EdelBookingProAdminCustomers {
                                 <td><strong><?php echo esc_html($c->display_name); ?></strong></td>
                                 <td><?php echo esc_html($c->customer_email); ?></td>
                                 <td><?php echo esc_html($c->phone); ?></td>
-                                <td><?php echo esc_html($c->visit_count); ?>回</td>
+                                <td><?php echo esc_html($c->visit_count); ?><?php esc_html_e(' times', 'edel-booking'); ?></td>
                                 <td>
                                     <?php
                                     if ($c->last_visit) {
@@ -97,13 +91,13 @@ class EdelBookingProAdminCustomers {
                                     ?>
                                 </td>
                                 <td>
-                                    <a href="<?php echo admin_url('admin.php?page=edel-booking-pro-customers&action=view&email=' . urlencode($c->customer_email)); ?>" class="button button-small">詳細・メモ</a>
+                                    <a href="<?php echo admin_url('admin.php?page=edel-booking-pro-customers&action=view&email=' . urlencode($c->customer_email)); ?>" class="button button-small"><?php esc_html_e('Details / Note', 'edel-booking'); ?></a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6">データがありません。</td>
+                            <td colspan="6"><?php esc_html_e('No data found.', 'edel-booking'); ?></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -112,27 +106,21 @@ class EdelBookingProAdminCustomers {
     <?php
     }
 
-    /**
-     * 顧客詳細・履歴・メモ表示
-     * ★修正: ヘッダーの件数表示を「有効な来店回数」に変更
-     */
     private function render_detail($email) {
         global $wpdb;
         $table_appt = $wpdb->prefix . 'edel_booking_appointments';
         $table_service = $wpdb->prefix . 'edel_booking_services';
 
-        // 最新の情報取得
         $latest = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table_appt WHERE customer_email = %s ORDER BY start_datetime DESC LIMIT 1",
             $email
         ));
 
         if (!$latest) {
-            echo '<div class="wrap"><p>データが見つかりません。</p></div>';
+            echo '<div class="wrap"><p>' . esc_html__('No data found.', 'edel-booking') . '</p></div>';
             return;
         }
 
-        // 履歴取得
         $history = $wpdb->get_results($wpdb->prepare(
             "SELECT a.*, s.title as service_name
              FROM $table_appt a
@@ -142,7 +130,6 @@ class EdelBookingProAdminCustomers {
             $email
         ));
 
-        // ★追加: キャンセルを除外した「有効来店回数」を計算
         $valid_visit_count = 0;
         foreach ($history as $h) {
             if ($h->status !== 'cancelled') {
@@ -150,45 +137,43 @@ class EdelBookingProAdminCustomers {
             }
         }
 
-        // メモの取得
         $admin_note = '';
         $user = get_user_by('email', $email);
         if ($user) {
             $admin_note = get_user_meta($user->ID, 'edel_admin_note', true);
-            $user_type_label = '<span class="edel-badge-user">会員 (WordPressユーザー)</span>';
+            $user_type_label = '<span class="edel-badge-user">' . __('Member (WP User)', 'edel-booking') . '</span>';
         } else {
             $key = 'edel_guest_note_' . md5($email);
             $admin_note = get_option($key, '');
-            $user_type_label = '<span class="edel-badge-guest">ゲスト</span>';
+            $user_type_label = '<span class="edel-badge-guest">' . __('Guest', 'edel-booking') . '</span>';
         }
     ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">顧客詳細: <?php echo esc_html($latest->customer_name); ?> 様</h1>
-            <a href="<?php echo admin_url('admin.php?page=edel-booking-pro-customers'); ?>" class="page-title-action">一覧に戻る</a>
+            <h1 class="wp-heading-inline"><?php printf(esc_html__('Customer Details: %s', 'edel-booking'), esc_html($latest->customer_name)); ?></h1>
+            <a href="<?php echo admin_url('admin.php?page=edel-booking-pro-customers'); ?>" class="page-title-action"><?php esc_html_e('Back to List', 'edel-booking'); ?></a>
             <hr class="wp-header-end">
 
             <div class="edel-customer-grid">
                 <div class="edel-col-left">
                     <div class="edel-box">
-                        <h3>基本情報</h3>
+                        <h3><?php esc_html_e('Basic Info', 'edel-booking'); ?></h3>
                         <table class="form-table" style="margin-top:0;">
                             <tr>
-                                <th>区分</th>
+                                <th><?php esc_html_e('Type', 'edel-booking'); ?></th>
                                 <td><?php echo $user_type_label; ?></td>
                             </tr>
                             <tr>
-                                <th>メール</th>
+                                <th><?php esc_html_e('Email', 'edel-booking'); ?></th>
                                 <td><?php echo esc_html($email); ?></td>
                             </tr>
                             <tr>
-                                <th>電話番号</th>
+                                <th><?php esc_html_e('Phone', 'edel-booking'); ?></th>
                                 <td><?php echo esc_html($latest->customer_phone); ?></td>
                             </tr>
                             <tr>
-                                <th>初回来店</th>
+                                <th><?php esc_html_e('First Visit', 'edel-booking'); ?></th>
                                 <td>
                                     <?php
-                                    // 履歴の最後（一番古いもの）を表示
                                     if (!empty($history)) {
                                         echo date('Y/m/d', strtotime($history[count($history) - 1]->start_datetime));
                                     } else {
@@ -201,50 +186,53 @@ class EdelBookingProAdminCustomers {
                     </div>
 
                     <div class="edel-box">
-                        <h3>管理者用メモ (内部共有)</h3>
+                        <h3><?php esc_html_e('Admin Note (Internal)', 'edel-booking'); ?></h3>
                         <form method="post" action="">
                             <?php wp_nonce_field('edel_save_customer_note'); ?>
                             <input type="hidden" name="edel_customer_action" value="save_note">
                             <input type="hidden" name="customer_email" value="<?php echo esc_attr($email); ?>">
 
-                            <textarea name="admin_note" rows="8" class="large-text" placeholder="お客様の好みや特記事項などを入力してください..."><?php echo esc_textarea($admin_note); ?></textarea>
-                            <p class="description">※このメモはお客様には公開されません。</p>
-                            <?php submit_button('メモを保存', 'primary', 'submit', true, array('style' => 'margin-top:10px;')); ?>
+                            <textarea name="admin_note" rows="8" class="large-text" placeholder="<?php esc_attr_e('Enter preferences or special notes...', 'edel-booking'); ?>"><?php echo esc_textarea($admin_note); ?></textarea>
+                            <p class="description"><?php esc_html_e('This note is not visible to the customer.', 'edel-booking'); ?></p>
+                            <?php submit_button(__('Save Note', 'edel-booking'), 'primary', 'submit', true, array('style' => 'margin-top:10px;')); ?>
                         </form>
                     </div>
                 </div>
 
                 <div class="edel-col-right">
                     <div class="edel-box">
-                        <h3>来店履歴 (有効来店数: <?php echo $valid_visit_count; ?>回)</h3>
+                        <h3><?php printf(esc_html__('Visit History (Valid: %d)', 'edel-booking'), $valid_visit_count); ?></h3>
 
                         <table class="wp-list-table widefat fixed striped">
                             <thead>
                                 <tr>
-                                    <th>日時</th>
-                                    <th>メニュー</th>
-                                    <th>担当スタッフ</th>
-                                    <th>ステータス</th>
+                                    <th><?php esc_html_e('Date/Time', 'edel-booking'); ?></th>
+                                    <th><?php esc_html_e('Menu', 'edel-booking'); ?></th>
+                                    <th><?php esc_html_e('Staff', 'edel-booking'); ?></th>
+                                    <th><?php esc_html_e('Status', 'edel-booking'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($history as $h):
                                     $staff = get_userdata($h->staff_id);
-                                    $status_label = ($h->status == 'confirmed') ? '確定' : (($h->status == 'cancelled') ? 'キャンセル' : $h->status);
 
-                                    // ステータスに応じたスタイル
+                                    $status_label = $h->status;
+                                    if ($h->status == 'confirmed') $status_label = __('Confirmed', 'edel-booking');
+                                    if ($h->status == 'pending') $status_label = __('Pending', 'edel-booking');
+                                    if ($h->status == 'cancelled') $status_label = __('Cancelled', 'edel-booking');
+                                    if ($h->status == 'completed') $status_label = __('Completed', 'edel-booking');
+
                                     $status_style = '';
                                     if ($h->status == 'cancelled') $status_style = 'color:#a00; font-weight:bold;';
                                     if ($h->status == 'completed') $status_style = 'color:#27ae60; font-weight:bold;';
 
-                                    // キャンセル行は薄く表示（背景色調整）
                                     $row_style = ($h->status == 'cancelled') ? 'background-color:#f9f9f9; color:#999;' : '';
                                 ?>
                                     <tr style="<?php echo $row_style; ?>">
                                         <td><?php echo date('Y/m/d H:i', strtotime($h->start_datetime)); ?></td>
                                         <td><?php echo esc_html($h->service_name); ?></td>
-                                        <td><?php echo esc_html($staff ? $staff->display_name : '不明'); ?></td>
-                                        <td style="<?php echo $status_style; ?>"><?php echo $status_label; ?></td>
+                                        <td><?php echo esc_html($staff ? $staff->display_name : __('Unknown', 'edel-booking')); ?></td>
+                                        <td style="<?php echo $status_style; ?>"><?php echo esc_html($status_label); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

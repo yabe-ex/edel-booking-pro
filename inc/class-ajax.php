@@ -60,7 +60,7 @@ class EdelBookingProAjax {
     }
 
     public function fetch_events() {
-        if (!current_user_can('edit_posts')) wp_send_json_error('Forbidden');
+        if (!current_user_can('edit_posts')) wp_send_json_error(__('Forbidden', 'edel-booking'));
         global $wpdb;
         $table_appt = $wpdb->prefix . 'edel_booking_appointments';
         $start_req = isset($_GET['start']) ? sanitize_text_field($_GET['start']) : '';
@@ -76,7 +76,7 @@ class EdelBookingProAjax {
         $appointments = $wpdb->get_results($wpdb->prepare($sql, $params));
         foreach ($appointments as $row) {
             $staff = get_userdata($row->staff_id);
-            $staff_name = $staff ? $staff->display_name : '不明';
+            $staff_name = $staff ? $staff->display_name : __('Unknown', 'edel-booking');
             $color = '#3788d8';
             if ($row->status === 'pending') $color = '#f39c12';
             if ($row->status === 'cancelled') $color = '#c0392b';
@@ -218,14 +218,14 @@ class EdelBookingProAjax {
         $date = sanitize_text_field($_POST['date']);
         $staff_id = intval($_POST['staff_id']);
         $service_id = intval($_POST['service_id']);
-        if (!$date || !$staff_id || !$service_id) wp_send_json_error('パラメータが不足しています');
+        if (!$date || !$staff_id || !$service_id) wp_send_json_error(__('Missing parameters.', 'edel-booking'));
         $slots = $this->availability->get_available_slots($date, $staff_id, $service_id);
         wp_send_json_success($slots);
     }
 
     public function save_booking() {
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, '_ajax_nonce');
-        if (!current_user_can('edit_posts')) wp_send_json_error('権限がありません。');
+        if (!current_user_can('edit_posts')) wp_send_json_error(__('Permission denied.', 'edel-booking'));
         global $wpdb;
         $staff_id = intval($_POST['staff_id']);
         $service_id = intval($_POST['service_id']);
@@ -236,7 +236,7 @@ class EdelBookingProAjax {
         $customer_phone = sanitize_text_field($_POST['customer_phone']);
         $note = sanitize_textarea_field($_POST['note']);
         $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}edel_booking_services WHERE id = %d", $service_id));
-        if (!$service) wp_send_json_error('選択されたサービスが無効です。');
+        if (!$service) wp_send_json_error(__('Invalid service.', 'edel-booking'));
         $start_datetime = $date . ' ' . $time . ':00';
         $start_ts = strtotime($start_datetime);
         $end_ts = $start_ts + ($service->duration * 60);
@@ -250,9 +250,9 @@ class EdelBookingProAjax {
             $staff = get_userdata($staff_id);
             $booking_data = array('customer_name' => $customer_name, 'customer_email' => $customer_email, 'staff_id' => $staff_id, 'date' => $date, 'time' => $time, 'end_time' => date('H:i', $end_ts), 'note' => $note);
             $this->emails->send_booking_confirmation($booking_data, $service->title, $staff->display_name);
-            wp_send_json_success('予約を保存しました。');
+            wp_send_json_success(__('Booking saved.', 'edel-booking'));
         } else {
-            wp_send_json_error('データベース保存エラー: ' . $wpdb->last_error);
+            wp_send_json_error(__('Database save error: ', 'edel-booking') . $wpdb->last_error);
         }
     }
 
@@ -270,7 +270,7 @@ class EdelBookingProAjax {
 
         $create_account = isset($_POST['create_account']) && $_POST['create_account'] == '1';
 
-        if (!$staff_id || !$service_id || !$date || !$time || !$name || !$email) wp_send_json_error('入力内容に不備があります。');
+        if (!$staff_id || !$service_id || !$date || !$time || !$name || !$email) wp_send_json_error(__('Incomplete input data.', 'edel-booking'));
 
         $customer_id = NULL;
         $new_password = NULL;
@@ -294,14 +294,13 @@ class EdelBookingProAjax {
             }
         }
 
-        // ★カスタムフィールド処理 (前回値保存ロジックを追加)
+        // カスタムフィールド処理
         $custom_data_json = NULL;
         if (isset($_POST['edel_custom_fields']) && is_array($_POST['edel_custom_fields'])) {
             $custom_fields_config = isset($this->settings['custom_fields']) ? $this->settings['custom_fields'] : array();
             $saved_custom_data = array();
 
             foreach ($custom_fields_config as $idx => $conf) {
-                // $idx は保存時のキー（ID）
                 $val = isset($_POST['edel_custom_fields'][$idx]) ? sanitize_text_field($_POST['edel_custom_fields'][$idx]) : '';
 
                 $saved_custom_data[] = array(
@@ -309,7 +308,6 @@ class EdelBookingProAjax {
                     'value' => $val
                 );
 
-                // 設定で「前回値を保持」が有効で、かつ顧客IDが特定できている場合、メタデータを保存
                 if ($customer_id && !empty($conf['save_default'])) {
                     update_user_meta($customer_id, 'edel_cf_last_' . $idx, $val);
                 }
@@ -320,7 +318,7 @@ class EdelBookingProAjax {
         }
 
         $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}edel_booking_services WHERE id = %d", $service_id));
-        if (!$service) wp_send_json_error('サービスが無効です。');
+        if (!$service) wp_send_json_error(__('Invalid service.', 'edel-booking'));
         $start_datetime = $date . ' ' . $time . ':00';
         $start_ts = strtotime($start_datetime);
         $end_ts = $start_ts + ($service->duration * 60);
@@ -330,7 +328,7 @@ class EdelBookingProAjax {
         $occupied_start = date('Y-m-d H:i:s', $occupied_start_ts);
         $occupied_end = date('Y-m-d H:i:s', $occupied_end_ts);
         $collision = $wpdb->get_var($wpdb->prepare("SELECT count(*) FROM {$wpdb->prefix}edel_booking_appointments WHERE staff_id = %d AND status IN ('confirmed', 'pending') AND occupied_start < %s AND occupied_end > %s", $staff_id, $occupied_end, $occupied_start));
-        if ($collision > 0) wp_send_json_error('申し訳ありません。タッチの差でその時間は埋まってしまいました。');
+        if ($collision > 0) wp_send_json_error(__('Sorry, this slot has been taken.', 'edel-booking'));
 
         $insert = $wpdb->insert(
             $wpdb->prefix . 'edel_booking_appointments',
@@ -353,7 +351,7 @@ class EdelBookingProAjax {
             array('%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
         );
 
-        if (!$insert) wp_send_json_error('予約の保存に失敗しました。');
+        if (!$insert) wp_send_json_error(__('Failed to save booking.', 'edel-booking'));
 
         $staff = get_userdata($staff_id);
         $booking_data = array(
@@ -368,77 +366,77 @@ class EdelBookingProAjax {
             'new_password' => $new_password
         );
         $this->emails->send_booking_confirmation($booking_data, $service->title, $staff->display_name);
-        wp_send_json_success(array('message' => '予約完了', 'created_account' => $account_created));
+        wp_send_json_success(array('message' => __('Booking completed.', 'edel-booking'), 'created_account' => $account_created));
     }
 
     public function cancel_booking() {
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, 'nonce');
-        if (!is_user_logged_in()) wp_send_json_error('ログインが必要です。');
+        if (!is_user_logged_in()) wp_send_json_error(__('Login required.', 'edel-booking'));
         $booking_id = intval($_POST['booking_id']);
         $current_user = wp_get_current_user();
         global $wpdb;
         $table = $wpdb->prefix . 'edel_booking_appointments';
         $booking = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d AND (customer_email = %s OR customer_id = %d)", $booking_id, $current_user->user_email, $current_user->ID));
-        if (!$booking) wp_send_json_error('予約が見つからないか、権限がありません。');
-        if ($booking->status === 'cancelled') wp_send_json_error('既にキャンセル済みです。');
+        if (!$booking) wp_send_json_error(__('Booking not found or permission denied.', 'edel-booking'));
+        if ($booking->status === 'cancelled') wp_send_json_error(__('Already cancelled.', 'edel-booking'));
         $settings = get_option('edel_booking_settings', array());
         $cancel_limit_hours = isset($settings['cancel_limit']) ? intval($settings['cancel_limit']) : 1;
         $limit_time = strtotime($booking->start_datetime) - ($cancel_limit_hours * 3600);
         if (time() > $limit_time) {
-            wp_send_json_error("キャンセル期限（予約の{$cancel_limit_hours}時間前）を過ぎています。");
+            wp_send_json_error(sprintf(__('Cancellation deadline passed (up to %d hours before).', 'edel-booking'), $cancel_limit_hours));
         }
         $updated = $wpdb->update($table, array('status' => 'cancelled'), array('id' => $booking_id));
-        if ($updated === false) wp_send_json_error('データベースエラー');
+        if ($updated === false) wp_send_json_error(__('Database error.', 'edel-booking'));
         $staff = get_userdata($booking->staff_id);
         $this->emails->send_cancellation($booking, $staff->display_name);
-        wp_send_json_success('キャンセルしました。');
+        wp_send_json_success(__('Booking cancelled.', 'edel-booking'));
     }
     public function mypage_login() {
         check_ajax_referer('edel-booking-pro', 'nonce');
         $email = sanitize_email($_POST['email']);
         $password = $_POST['password'];
         if (!$email || !$password) {
-            wp_send_json_error('メールアドレスとパスワードを入力してください。');
+            wp_send_json_error(__('Please enter email and password.', 'edel-booking'));
         }
         $user = get_user_by('email', $email);
         if (!$user) {
-            wp_send_json_error('ユーザーが見つかりません。');
+            wp_send_json_error(__('User not found.', 'edel-booking'));
         }
         $creds = array('user_login' => $user->user_login, 'user_password' => $password, 'remember' => true);
         $signon = wp_signon($creds, false);
         if (is_wp_error($signon)) {
-            wp_send_json_error('パスワードが間違っています。');
+            wp_send_json_error(__('Incorrect password.', 'edel-booking'));
         }
-        wp_send_json_success('ログインしました。リダイレクトします...');
+        wp_send_json_success(__('Logged in. Redirecting...', 'edel-booking'));
     }
     public function mypage_lost_password() {
         check_ajax_referer('edel-booking-pro', 'nonce');
         $email = sanitize_email($_POST['email']);
-        if (!$email) wp_send_json_error('メールアドレスを入力してください。');
+        if (!$email) wp_send_json_error(__('Please enter email address.', 'edel-booking'));
         $user = get_user_by('email', $email);
         if (!$user) {
-            wp_send_json_error('このメールアドレスは登録されていません。');
+            wp_send_json_error(__('Email address not found.', 'edel-booking'));
         }
         $this->emails->start_mail_filters();
         $status = retrieve_password($user->user_login);
         $this->emails->stop_mail_filters();
         if (is_wp_error($status)) {
-            wp_send_json_error('メール送信に失敗しました: ' . $status->get_error_message());
+            wp_send_json_error(__('Failed to send email: ', 'edel-booking') . $status->get_error_message());
         }
-        wp_send_json_success('パスワードリセット用のメールを送信しました。メール内のリンクから再設定を行ってください。');
+        wp_send_json_success(__('Password reset email sent. Please check your inbox.', 'edel-booking'));
     }
     public function mypage_change_password() {
         check_ajax_referer('edel-booking-pro', 'nonce');
-        if (!is_user_logged_in()) wp_send_json_error('ログインが必要です。');
+        if (!is_user_logged_in()) wp_send_json_error(__('Login required.', 'edel-booking'));
         $new_pass = $_POST['new_pass'];
         $confirm_pass = $_POST['confirm_pass'];
-        if (!$new_pass) wp_send_json_error('新しいパスワードを入力してください。');
-        if ($new_pass !== $confirm_pass) wp_send_json_error('新しいパスワードが一致しません。');
-        if (strlen($new_pass) < 6) wp_send_json_error('パスワードは6文字以上にしてください。');
+        if (!$new_pass) wp_send_json_error(__('Please enter a new password.', 'edel-booking'));
+        if ($new_pass !== $confirm_pass) wp_send_json_error(__('Passwords do not match.', 'edel-booking'));
+        if (strlen($new_pass) < 6) wp_send_json_error(__('Password must be at least 6 characters.', 'edel-booking'));
         $user = wp_get_current_user();
         wp_set_password($new_pass, $user->ID);
         $creds = array('user_login' => $user->user_login, 'user_password' => $new_pass, 'remember' => true);
         wp_signon($creds, false);
-        wp_send_json_success('パスワードを変更しました。');
+        wp_send_json_success(__('Password changed.', 'edel-booking'));
     }
 }
