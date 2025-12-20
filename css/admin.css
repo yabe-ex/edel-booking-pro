@@ -108,51 +108,46 @@
 .edel-field-row.card {
     background: #fff;
     border: 1px solid #ccd0d4;
-    padding: 20px;
-    margin-bottom: 20px; /* 余白を広めに */
+    padding: 20px 25px; /* 内側の余白を少し増やす */
+    margin-bottom: 20px;
     border-radius: 6px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
-    gap: 15px; /* 行間の余白 */
+    gap: 15px;
 }
 
 /* 上段 (項目名、タイプ、必須) */
 .edel-field-header {
     display: flex;
-    gap: 20px;
+    gap: 30px; /* カラム間の間隔を広げる */
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: flex-end; /* ★重要: 入力欄の下底を揃える */
 }
 
-/* 中段 (選択肢) */
-.edel-field-body {
-    width: 100%;
-}
-
-/* 下段 (削除ボタン) */
-.edel-field-footer {
-    text-align: right;
-    padding-top: 10px;
-    border-top: 1px solid #f0f0f0;
-}
-
-/* 各カラム共通 */
+/* 各カラム共通設定 */
 .edel-field-col {
     display: flex;
     flex-direction: column;
+    margin: 5px 0; /* ★重要: 上下に余白を追加 */
 }
 
+/* ラベルのデザイン */
 .edel-field-col label {
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 8px; /* ラベルと入力欄の間の余白 */
+    margin-bottom: 10px; /* ★重要: ラベルと入力欄の間隔を広げる */
     color: #444;
+    line-height: 1.4;
+    min-height: 1.4em; /* ラベルの高さが違っても揃うように最低高さを確保 */
 }
 
+/* 入力フィールドの調整 */
 .edel-field-col input[type='text'],
 .edel-field-col select {
     max-width: 100%;
+    height: 36px; /* 高さを揃える */
+    line-height: 1.2;
 }
 
 /* 個別サイズ調整 */
@@ -164,10 +159,30 @@
     flex: 1;
     min-width: 150px;
 }
-.col-req {
-    flex: 0 0 80px;
-    align-items: center;
-    justify-content: center;
+
+/* スイッチ系のカラムは中央揃えではなく、左寄せで配置しつつ高さを合わせる */
+.col-req,
+.col-default {
+    flex: 0 0 auto;
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* 下に揃える */
+    padding-bottom: 5px; /* 微調整 */
+}
+
+/* スイッチ本体の位置調整 */
+.col-req .switch,
+.col-default .switch {
+    margin-top: 0;
+}
+
+/* 中段 (選択肢) */
+.edel-field-body {
+    width: 100%;
+    border-top: 1px dashed #eee; /* 区切り線 */
+    padding-top: 15px;
+    margin-top: 5px;
 }
 
 /* 選択肢の入力欄を広く */
@@ -175,16 +190,23 @@
     width: 100%;
 }
 .col-options input[type='text'] {
-    width: 100%; /* 横幅いっぱい */
+    width: 100%;
 }
 
-/* 必須スイッチ (トグルボタン) */
+/* 下段 (削除ボタン) */
+.edel-field-footer {
+    text-align: right;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 5px;
+}
+
+/* --- 必須/デフォルトスイッチ (トグルボタン) --- */
 .switch {
     position: relative;
     display: inline-block;
-    width: 40px;
-    height: 22px;
-    margin-top: 5px;
+    width: 44px; /* 少し大きく */
+    height: 24px;
 }
 .switch input {
     opacity: 0;
@@ -200,13 +222,13 @@
     bottom: 0;
     background-color: #ccc;
     transition: 0.4s;
-    border-radius: 22px;
+    border-radius: 24px;
 }
 .slider:before {
     position: absolute;
     content: '';
-    height: 16px;
-    width: 16px;
+    height: 18px;
+    width: 18px;
     left: 3px;
     bottom: 3px;
     background-color: white;
@@ -217,10 +239,10 @@ input:checked + .slider {
     background-color: #2271b1;
 }
 input:checked + .slider:before {
-    transform: translateX(18px);
+    transform: translateX(20px);
 }
 
-/* 削除ボタン (文字) */
+/* 削除ボタン */
 .edel-remove-field-text {
     color: #d63638 !important;
     border-color: #d63638 !important;
@@ -232,7 +254,7 @@ input:checked + .slider:before {
 }
 
 .description {
-    margin-top: 6px;
+    margin-top: 8px;
     font-size: 12px;
     color: #777;
 }
@@ -254,18 +276,74 @@ input:checked + .slider:before {
     .edel-field-header {
         flex-direction: column;
         gap: 15px;
+        align-items: stretch; /* スマホでは幅いっぱいに */
     }
     .col-label,
-    .col-type {
+    .col-type,
+    .col-req,
+    .col-default {
         width: 100%;
+        min-width: 0;
     }
-    .col-req {
+    .col-req,
+    .col-default {
         flex-direction: row;
-        width: 100%;
         justify-content: space-between;
-        margin-top: 5px;
+        align-items: center;
+        padding-bottom: 0;
     }
-    .col-req label:first-child {
+    .col-req label:first-child,
+    .col-default label:first-child {
         margin-bottom: 0;
     }
+}
+
+/* 設定グループを囲むボックス */
+.edel-display-setting-box {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px 25px;
+    border-radius: 6px;
+    max-width: 550px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* 各行のレイアウト */
+.edel-display-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.edel-display-row:last-child {
+    margin-bottom: 0;
+}
+
+/* 左側のラベル (固定幅で揃える) */
+.edel-display-label {
+    width: 140px; /* 幅を確保 */
+    flex-shrink: 0;
+    font-weight: 600;
+    color: #444;
+}
+
+/* フッター (区切り線と余白) */
+.edel-display-row.footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #eee;
+}
+
+/* ラジオボタンのグループ */
+.edel-radio-group label {
+    margin-right: 20px;
+    font-weight: 500;
+}
+
+/* トグル系のラベル */
+.edel-toggle-label {
+    font-weight: 500;
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }

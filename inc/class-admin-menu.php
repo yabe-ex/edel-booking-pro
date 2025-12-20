@@ -16,7 +16,6 @@ class EdelBookingProAdminMenu {
         add_menu_page('予約管理', '予約管理', 'edit_posts', EDEL_BOOKING_PRO_SLUG, array($this, 'render_booking_list_page'), 'dashicons-calendar-alt', 26);
         add_submenu_page(EDEL_BOOKING_PRO_SLUG, '予約リスト', '予約リスト', 'edit_posts', EDEL_BOOKING_PRO_SLUG, array($this, 'render_booking_list_page'));
 
-        // 他のサブメニュー
         if ($this->admin_logic) {
             add_submenu_page(EDEL_BOOKING_PRO_SLUG, 'スタッフ管理', 'スタッフ管理', 'manage_options', 'edel-booking-staff', array($this->admin_logic, 'render_staff_page'));
             add_submenu_page(EDEL_BOOKING_PRO_SLUG, 'メニュー管理', 'メニュー管理', 'manage_options', 'edel-booking-services', array($this->admin_logic, 'render_services_page'));
@@ -30,7 +29,8 @@ class EdelBookingProAdminMenu {
     }
 
     public function enqueue_scripts($hook) {
-        if (strpos($hook, EDEL_BOOKING_PRO_SLUG) === false) return;
+        // ★修正: 設定ページ(edel-booking-settings)なども含めるため、判定文字列を短くしました
+        if (strpos($hook, 'edel-booking-') === false) return;
 
         $version = time(); // キャッシュクリア用
 
@@ -44,7 +44,7 @@ class EdelBookingProAdminMenu {
         wp_localize_script(EDEL_BOOKING_PRO_SLUG . '-admin', 'edel_admin', array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce(EDEL_BOOKING_PRO_SLUG),
-            'staff_id' => $staff_id // ★ここが重要: JSでイベントを取得する際に使用
+            'staff_id' => $staff_id
         ));
     }
 
@@ -132,7 +132,6 @@ class EdelBookingProAdminMenu {
                         $sql = "SELECT * FROM {$wpdb->prefix}edel_booking_appointments WHERE start_datetime BETWEEN %s AND %s";
                         $params = array($start_date, $end_date);
 
-                        // ★スタッフ絞り込みSQL追加
                         if ($selected_staff_id > 0) {
                             $sql .= " AND staff_id = %d";
                             $params[] = $selected_staff_id;
@@ -160,7 +159,6 @@ class EdelBookingProAdminMenu {
                                     $date_display .= ' - ' . date('H:i', strtotime($row->end_datetime));
                                 }
 
-                                // カスタムデータの簡易表示
                                 $details = "";
                                 if (!empty($row->custom_data)) {
                                     $arr = json_decode($row->custom_data, true);

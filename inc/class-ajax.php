@@ -59,7 +59,6 @@ class EdelBookingProAjax {
         return false;
     }
 
-    // fetch_events, get_calendar_status, get_available_slots 等は変更なしのため省略せず記述
     public function fetch_events() {
         if (!current_user_can('edit_posts')) wp_send_json_error('Forbidden');
         global $wpdb;
@@ -257,9 +256,6 @@ class EdelBookingProAjax {
         }
     }
 
-    /**
-     * フロントからの予約送信 (★修正: カスタムフィールド保存対応)
-     */
     public function submit_booking_front() {
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, 'nonce');
         global $wpdb;
@@ -271,25 +267,6 @@ class EdelBookingProAjax {
         $email = sanitize_email($_POST['customer_email']);
         $phone = sanitize_text_field($_POST['customer_phone']);
         $note = sanitize_textarea_field($_POST['note']);
-
-        // ★カスタムフィールド処理
-        $custom_data_json = NULL;
-        if (isset($_POST['edel_custom_fields']) && is_array($_POST['edel_custom_fields'])) {
-            $custom_fields_config = isset($this->settings['custom_fields']) ? $this->settings['custom_fields'] : array();
-            $saved_custom_data = array();
-
-            foreach ($custom_fields_config as $idx => $conf) {
-                $val = isset($_POST['edel_custom_fields'][$idx]) ? sanitize_text_field($_POST['edel_custom_fields'][$idx]) : '';
-                // ラベルと値をペアで保存 (設定変更に強くするため)
-                $saved_custom_data[] = array(
-                    'label' => $conf['label'],
-                    'value' => $val
-                );
-            }
-            if (!empty($saved_custom_data)) {
-                $custom_data_json = json_encode($saved_custom_data, JSON_UNESCAPED_UNICODE);
-            }
-        }
 
         $create_account = isset($_POST['create_account']) && $_POST['create_account'] == '1';
 
@@ -314,6 +291,31 @@ class EdelBookingProAjax {
                     wp_set_auth_cookie($customer_id);
                     $account_created = true;
                 }
+            }
+        }
+
+        // ★カスタムフィールド処理 (前回値保存ロジックを追加)
+        $custom_data_json = NULL;
+        if (isset($_POST['edel_custom_fields']) && is_array($_POST['edel_custom_fields'])) {
+            $custom_fields_config = isset($this->settings['custom_fields']) ? $this->settings['custom_fields'] : array();
+            $saved_custom_data = array();
+
+            foreach ($custom_fields_config as $idx => $conf) {
+                // $idx は保存時のキー（ID）
+                $val = isset($_POST['edel_custom_fields'][$idx]) ? sanitize_text_field($_POST['edel_custom_fields'][$idx]) : '';
+
+                $saved_custom_data[] = array(
+                    'label' => $conf['label'],
+                    'value' => $val
+                );
+
+                // 設定で「前回値を保持」が有効で、かつ顧客IDが特定できている場合、メタデータを保存
+                if ($customer_id && !empty($conf['save_default'])) {
+                    update_user_meta($customer_id, 'edel_cf_last_' . $idx, $val);
+                }
+            }
+            if (!empty($saved_custom_data)) {
+                $custom_data_json = json_encode($saved_custom_data, JSON_UNESCAPED_UNICODE);
             }
         }
 
@@ -345,7 +347,7 @@ class EdelBookingProAjax {
                 'customer_email' => $email,
                 'customer_phone' => $phone,
                 'note' => $note,
-                'custom_data' => $custom_data_json, // ★保存
+                'custom_data' => $custom_data_json,
                 'status' => 'confirmed'
             ),
             array('%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
@@ -362,14 +364,13 @@ class EdelBookingProAjax {
             'time' => $time,
             'end_time' => date('H:i', $end_ts),
             'note' => $note,
-            'custom_data' => $custom_data_json, // ★メール用
+            'custom_data' => $custom_data_json,
             'new_password' => $new_password
         );
         $this->emails->send_booking_confirmation($booking_data, $service->title, $staff->display_name);
         wp_send_json_success(array('message' => '予約完了', 'created_account' => $account_created));
     }
 
-    // cancel_booking, mypage_login, mypage_lost_password, mypage_change_password は変更なしのため省略
     public function cancel_booking() {
         check_ajax_referer(EDEL_BOOKING_PRO_SLUG, 'nonce');
         if (!is_user_logged_in()) wp_send_json_error('ログインが必要です。');

@@ -18,7 +18,7 @@ class EdelBookingProAdmin {
 
     /**
      * ==================================================
-     * 1. スタッフ管理ページ (修正版: ドロップダウン選択)
+     * 1. スタッフ管理ページ
      * ==================================================
      */
     public function render_staff_page() {
@@ -56,37 +56,27 @@ class EdelBookingProAdmin {
             echo '<div class="notice notice-success is-dismissible"><p>スタッフ設定を保存しました。</p></div>';
         }
 
-        // --- 新規追加処理 (ドロップダウンからの追加) ---
+        // --- 新規追加処理 ---
         if (isset($_POST['add_new_staff']) && check_admin_referer('edel_add_staff_action')) {
             $new_user_id = intval($_POST['new_staff_user_id']);
             if ($new_user_id > 0) {
                 update_user_meta($new_user_id, 'is_edel_staff', 1);
-                // 追加後、そのユーザーの編集画面へリダイレクトも可能だが、一旦リスト表示
                 echo '<div class="notice notice-success is-dismissible"><p>新しいスタッフを追加しました。右側のフォームで詳細を設定してください。</p></div>';
             }
         }
 
-        // --- 削除処理 (スタッフ権限の剥奪) ---
+        // --- 削除処理 ---
         if (isset($_GET['action']) && $_GET['action'] == 'remove_staff' && isset($_GET['user_id'])) {
             $remove_id = intval($_GET['user_id']);
             delete_user_meta($remove_id, 'is_edel_staff');
-            // 関連データも削除する場合
-            // $wpdb->delete($table_rel, array('staff_id' => $remove_id));
             echo '<div class="notice notice-success is-dismissible"><p>スタッフリストから除外しました。（ユーザー自体は削除されません）</p></div>';
         }
 
         // --- データ取得 ---
-        // 1. 現在のスタッフ
         $staff_users = get_users(array('meta_key' => 'is_edel_staff', 'meta_value' => 1));
         $staff_ids = wp_list_pluck($staff_users, 'ID');
-
-        // 2. スタッフではない全ユーザー (候補者)
-        $all_users = get_users(array('exclude' => $staff_ids)); // 既にスタッフの人は除外
-
-        // 3. 編集対象のユーザー
+        $all_users = get_users(array('exclude' => $staff_ids));
         $edit_user_id = isset($_GET['edit_user']) ? intval($_GET['edit_user']) : 0;
-        // 新規追加直後などでID指定がない場合、リストの最初の人を選択状態にするなどの処理も可能
-
         $target_user = $edit_user_id ? get_userdata($edit_user_id) : null;
         $all_services = $wpdb->get_results("SELECT * FROM $table_services WHERE is_active = 1");
 
@@ -154,7 +144,6 @@ class EdelBookingProAdmin {
                 <div style="flex:2; background:#fff; padding:20px; border:1px solid #ccd0d4; box-shadow:0 1px 1px rgba(0,0,0,0.04);">
                     <?php if ($target_user):
                         $schedule = get_user_meta($target_user->ID, 'edel_weekly_schedule', true);
-                        // 担当サービス取得
                         $rel_rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_rel WHERE staff_id = %d", $target_user->ID));
                         $my_services = array();
                         $my_custom_prices = array();
@@ -245,7 +234,6 @@ class EdelBookingProAdmin {
         global $wpdb;
         $table = $wpdb->prefix . 'edel_booking_services';
 
-        // 追加・編集・削除処理
         if (isset($_POST['save_service']) && check_admin_referer('edel_save_service')) {
             $data = array(
                 'title' => sanitize_text_field($_POST['title']),
@@ -271,7 +259,6 @@ class EdelBookingProAdmin {
             echo '<div class="notice notice-success is-dismissible"><p>削除しました。</p></div>';
         }
 
-        // データ取得
         $edit_data = null;
         if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
             $edit_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", intval($_GET['id'])));
@@ -359,6 +346,7 @@ class EdelBookingProAdmin {
     /**
      * ==================================================
      * 3. スケジュール例外 (休日・時間変更) 管理ページ
+     * ★修正: スタッフごとの絞り込み機能を追加
      * ==================================================
      */
     public function render_schedule_exceptions_page() {
@@ -366,7 +354,10 @@ class EdelBookingProAdmin {
         $table = $wpdb->prefix . 'edel_booking_schedule_exceptions';
         $staffs = get_users(array('meta_key' => 'is_edel_staff', 'meta_value' => 1));
 
-        // 保存・削除
+        // 表示用フィルタリングパラメータ
+        $view_staff_id = isset($_GET['view_staff_id']) ? intval($_GET['view_staff_id']) : 0;
+
+        // 保存処理
         if (isset($_POST['save_exception']) && check_admin_referer('edel_save_exception')) {
             $wpdb->insert($table, array(
                 'staff_id' => intval($_POST['staff_id']),
@@ -378,28 +369,38 @@ class EdelBookingProAdmin {
             ));
             echo '<div class="notice notice-success is-dismissible"><p>例外スケジュールを追加しました。</p></div>';
         }
+
+        // 削除処理
         if (isset($_GET['delete_id'])) {
             $wpdb->delete($table, array('id' => intval($_GET['delete_id'])));
             echo '<div class="notice notice-success is-dismissible"><p>削除しました。</p></div>';
         }
 
-        // 一覧取得
-        $rows = $wpdb->get_results("SELECT * FROM $table ORDER BY exception_date DESC LIMIT 50");
+        // 一覧取得 (絞り込み対応)
+        $sql = "SELECT * FROM $table";
+        if ($view_staff_id > 0) {
+            $sql .= $wpdb->prepare(" WHERE staff_id = %d", $view_staff_id);
+        }
+        $sql .= " ORDER BY exception_date DESC LIMIT 50";
+
+        $rows = $wpdb->get_results($sql);
     ?>
         <div class="wrap">
             <h1>スケジュール例外設定</h1>
             <p>特定の日だけ休みにしたり、営業時間を変更したりする場合に設定します。</p>
 
             <div style="display:flex; gap:20px; align-items:flex-start;">
+
                 <div style="flex:1; background:#fff; padding:20px; border:1px solid #ccc;">
                     <h2>新規登録</h2>
                     <form method="post">
                         <?php wp_nonce_field('edel_save_exception'); ?>
+
                         <p>
                             <label>対象スタッフ<br>
                                 <select name="staff_id" style="width:100%;">
                                     <?php foreach ($staffs as $st): ?>
-                                        <option value="<?php echo $st->ID; ?>"><?php echo esc_html($st->display_name); ?></option>
+                                        <option value="<?php echo $st->ID; ?>" <?php selected($view_staff_id, $st->ID); ?>><?php echo esc_html($st->display_name); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </label>
@@ -424,6 +425,23 @@ class EdelBookingProAdmin {
                 </div>
 
                 <div style="flex:2;">
+
+                    <div style="margin-bottom: 15px; text-align: right; background: #f9f9f9; padding: 10px; border: 1px solid #ddd;">
+                        <form method="get">
+                            <input type="hidden" name="page" value="edel-booking-exceptions">
+                            <label style="font-weight:bold;">表示するスタッフ:
+                                <select name="view_staff_id" onchange="this.form.submit()">
+                                    <option value="0">全員を表示</option>
+                                    <?php foreach ($staffs as $st): ?>
+                                        <option value="<?php echo $st->ID; ?>" <?php selected($view_staff_id, $st->ID); ?>>
+                                            <?php echo esc_html($st->display_name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        </form>
+                    </div>
+
                     <table class="widefat striped">
                         <thead>
                             <tr>
@@ -435,23 +453,29 @@ class EdelBookingProAdmin {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($rows as $r):
-                                $st = get_userdata($r->staff_id);
-                            ?>
+                            <?php if ($rows): ?>
+                                <?php foreach ($rows as $r):
+                                    $st = get_userdata($r->staff_id);
+                                ?>
+                                    <tr>
+                                        <td><?php echo $r->exception_date; ?></td>
+                                        <td><?php echo $st ? esc_html($st->display_name) : '不明'; ?></td>
+                                        <td>
+                                            <?php if ($r->is_day_off): ?>
+                                                <span style="color:red; font-weight:bold;">休み</span>
+                                            <?php else: ?>
+                                                <?php echo substr($r->start_time, 0, 5) . ' - ' . substr($r->end_time, 0, 5); ?>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo esc_html($r->reason); ?></td>
+                                        <td><a href="admin.php?page=edel-booking-exceptions&delete_id=<?php echo $r->id; ?>&view_staff_id=<?php echo $view_staff_id; ?>" class="button button-small" onclick="return confirm('削除しますか？')">削除</a></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
                                 <tr>
-                                    <td><?php echo $r->exception_date; ?></td>
-                                    <td><?php echo $st ? esc_html($st->display_name) : '不明'; ?></td>
-                                    <td>
-                                        <?php if ($r->is_day_off): ?>
-                                            <span style="color:red; font-weight:bold;">休み</span>
-                                        <?php else: ?>
-                                            <?php echo substr($r->start_time, 0, 5) . ' - ' . substr($r->end_time, 0, 5); ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo esc_html($r->reason); ?></td>
-                                    <td><a href="admin.php?page=edel-booking-exceptions&delete_id=<?php echo $r->id; ?>" class="button button-small" onclick="return confirm('削除しますか？')">削除</a></td>
+                                    <td colspan="5">例外スケジュールは見つかりませんでした。</td>
                                 </tr>
-                            <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>

@@ -98,9 +98,11 @@ class EdelBookingProFront {
         $current_user_name = '';
         $current_user_email = '';
         $is_logged_in = is_user_logged_in();
+        $current_user_id = 0;
 
         if ($is_logged_in) {
             $u = wp_get_current_user();
+            $current_user_id = $u->ID;
             $current_user_name = $u->display_name;
             $current_user_email = $u->user_email;
         }
@@ -198,21 +200,27 @@ class EdelBookingProFront {
                             if (!empty($field['options'])) {
                                 $options = array_map('trim', explode(',', $field['options']));
                             }
+
+                            // ★前回値の取得
+                            $default_val = '';
+                            if ($is_logged_in && !empty($field['save_default'])) {
+                                $default_val = get_user_meta($current_user_id, 'edel_cf_last_' . $index, true);
+                            }
                         ?>
                             <div class="edel-form-group">
                                 <label><?php echo $label . $req_mark; ?></label>
 
                                 <?php if ($type === 'text'): ?>
-                                    <input type="text" name="edel_custom_fields[<?php echo $index; ?>]" class="edel-input" <?php echo $req; ?>>
+                                    <input type="text" name="edel_custom_fields[<?php echo $index; ?>]" class="edel-input" <?php echo $req; ?> value="<?php echo esc_attr($default_val); ?>">
 
                                 <?php elseif ($type === 'textarea'): ?>
-                                    <textarea name="edel_custom_fields[<?php echo $index; ?>]" class="edel-input" rows="3" <?php echo $req; ?>></textarea>
+                                    <textarea name="edel_custom_fields[<?php echo $index; ?>]" class="edel-input" rows="3" <?php echo $req; ?>><?php echo esc_textarea($default_val); ?></textarea>
 
                                 <?php elseif ($type === 'select'): ?>
                                     <select name="edel_custom_fields[<?php echo $index; ?>]" class="edel-select" <?php echo $req; ?>>
                                         <option value="">選択してください</option>
                                         <?php foreach ($options as $opt): ?>
-                                            <option value="<?php echo esc_attr($opt); ?>"><?php echo esc_html($opt); ?></option>
+                                            <option value="<?php echo esc_attr($opt); ?>" <?php selected($default_val, $opt); ?>><?php echo esc_html($opt); ?></option>
                                         <?php endforeach; ?>
                                     </select>
 
@@ -220,7 +228,7 @@ class EdelBookingProFront {
                                     <div style="margin-top:5px;">
                                         <?php foreach ($options as $opt_idx => $opt): ?>
                                             <label style="display:inline-block; margin-right:15px; font-weight:normal;">
-                                                <input type="radio" name="edel_custom_fields[<?php echo $index; ?>]" value="<?php echo esc_attr($opt); ?>" <?php echo ($req && $opt_idx === 0) ? 'required' : ''; ?>>
+                                                <input type="radio" name="edel_custom_fields[<?php echo $index; ?>]" value="<?php echo esc_attr($opt); ?>" <?php echo ($req && $opt_idx === 0 && empty($default_val)) ? 'required' : ''; ?> <?php checked($default_val, $opt); ?>>
                                                 <?php echo esc_html($opt); ?>
                                             </label>
                                         <?php endforeach; ?>
