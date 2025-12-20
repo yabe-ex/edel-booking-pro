@@ -5,7 +5,7 @@ class EdelBookingProAdminSettings {
     private $option_name = 'edel_booking_settings';
 
     public function render() {
-        // --- (保存処理などは変更なし・省略) ---
+        // --- 保存処理 ---
         if (isset($_POST['edel_save_settings_btn'])) {
             if (check_admin_referer('edel_save_settings_action')) {
                 $this->save_settings();
@@ -15,14 +15,18 @@ class EdelBookingProAdminSettings {
             }
         }
 
+        // --- 設定値の読み込み ---
         $settings = get_option($this->option_name, array());
 
-        // --- 設定値の取得 (変更なし) ---
+        // 一般設定
         $shop_name    = isset($settings['shop_name']) ? $settings['shop_name'] : get_bloginfo('name');
         $mypage_id    = isset($settings['mypage_id']) ? intval($settings['mypage_id']) : 0;
         $closed_days  = isset($settings['closed_days']) ? $settings['closed_days'] : array();
         $cancel_limit = isset($settings['cancel_limit']) ? intval($settings['cancel_limit']) : 1;
+        // ★追加: アンインストール設定
+        $delete_data  = isset($settings['delete_data_on_uninstall']) ? intval($settings['delete_data_on_uninstall']) : 0;
 
+        // 表示設定
         $show_price    = isset($settings['show_price']) ? intval($settings['show_price']) : 1;
         $calendar_mode = isset($settings['calendar_mode']) ? $settings['calendar_mode'] : 'bar';
         $label_service = isset($settings['label_service']) ? $settings['label_service'] : 'メニュー';
@@ -32,6 +36,7 @@ class EdelBookingProAdminSettings {
         $default_service = isset($settings['default_service']) ? intval($settings['default_service']) : 0;
         $default_staff   = isset($settings['default_staff']) ? intval($settings['default_staff']) : 0;
 
+        // メール設定
         $sender_name     = isset($settings['sender_name']) ? $settings['sender_name'] : get_bloginfo('name');
         $sender_email    = isset($settings['sender_email']) ? $settings['sender_email'] : get_option('admin_email');
         $admin_emails    = isset($settings['admin_emails']) ? $settings['admin_emails'] : get_option('admin_email');
@@ -42,6 +47,7 @@ class EdelBookingProAdminSettings {
         $val_remind_sub  = isset($settings['email_remind_sub']) ? $settings['email_remind_sub'] : '';
         $val_remind_body = isset($settings['email_remind_body']) ? $settings['email_remind_body'] : '';
 
+        // カスタムフィールド
         $custom_fields = isset($settings['custom_fields']) ? $settings['custom_fields'] : array();
 
         global $wpdb;
@@ -96,6 +102,20 @@ class EdelBookingProAdminSettings {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                            </td>
+                        </tr>
+
+                        <tr style="border-top: 1px solid #ddd;">
+                            <th scope="row"><label style="color:#d63638;">アンインストール設定</label></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="settings[delete_data_on_uninstall]" value="1" <?php checked($delete_data, 1); ?>>
+                                    プラグイン削除時にすべてのデータを消去する
+                                </label>
+                                <p class="description" style="color:#d63638; margin-top:5px;">
+                                    <strong>注意:</strong> この設定をONにしてプラグインを削除すると、予約データ、顧客履歴、設定など<strong>すべてのデータが完全に削除され、復元できなくなります。</strong><br>
+                                    通常版からPro版へ移行する場合や、一時的に停止する場合は<strong>チェックを入れないでください</strong>。
+                                </p>
                             </td>
                         </tr>
                     </table>
@@ -292,7 +312,6 @@ class EdelBookingProAdminSettings {
     }
 
     private function render_field_row($index, $data) {
-        // (変更なし、前回のコードと同じ)
         $label = isset($data['label']) ? $data['label'] : '';
         $type  = isset($data['type']) ? $data['type'] : 'text';
         $req   = isset($data['required']) ? $data['required'] : 0;
@@ -346,7 +365,6 @@ class EdelBookingProAdminSettings {
     }
 
     private function save_settings() {
-        // (変更なし、前回のコードと同じ)
         if (!isset($_POST['settings'])) return;
         $input = $_POST['settings'];
         $clean = array();
@@ -355,6 +373,8 @@ class EdelBookingProAdminSettings {
         $clean['mypage_id'] = intval($input['mypage_id']);
         $clean['closed_days'] = isset($input['closed_days']) ? $input['closed_days'] : array();
         $clean['cancel_limit'] = intval($input['cancel_limit']);
+        // ★追加: アンインストール設定の保存
+        $clean['delete_data_on_uninstall'] = isset($input['delete_data_on_uninstall']) ? 1 : 0;
 
         $clean['calendar_mode'] = isset($input['calendar_mode']) ? $input['calendar_mode'] : 'bar';
         $clean['show_price'] = isset($input['show_price']) ? 1 : 0;
